@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Учёт аренды</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Layout: phone-width app column, sticky top bar, fixed bottom tab bar, sheets slide up from the bottom */
+:root{
+  /* «Сливовый двор»: тёплый сливовый акцент + три цвета коммуналки как на настоящих счётчиках */
+  --bg:#F2F0F5; --surface:#FFFFFF; --surface-2:#F7F5FA; --line:#E4DEEA;
+  --ink:#1E1724; --muted:#675E70; --accent:#6E2A6B; --accent-ink:#FFFFFF; --accent-soft:#F1E3F0;
+  --ok:#2C7A4B; --ok-soft:#E1F1E7; --warn:#9A6412; --warn-soft:#F7EBD3; --bad:#B8383A; --bad-soft:#F8E1E1; --info:#2F5E9E; --info-soft:#E1EAF6;
+  --cold:#1F74D1; --cold-soft:#DFECFB; --hot:#D8492E; --hot-soft:#FCE4DE; --el:#C98A00; --el-soft:#FBF0D3; --night:#5149B8; --night-soft:#E6E4FA;
+  --odo:#211A26; --odo-ink:#F4F0F6;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141017; --surface:#1E1822; --surface-2:#261F2B; --line:#352C3B;
+  --ink:#EEE8F1; --muted:#A79DAF; --accent:#E0A6DA; --accent-ink:#1E0F1C; --accent-soft:#3A2238;
+  --ok:#6BCB8F; --ok-soft:#1C3324; --warn:#E5B35E; --warn-soft:#3A2E17; --bad:#F48C86; --bad-soft:#3E1F21; --info:#8DB4EC; --info-soft:#1D2A3D;
+  --cold:#6EB0F5; --cold-soft:#172A40; --hot:#FF8A6E; --hot-soft:#3D1F19; --el:#F5C04E; --el-soft:#3A2E12; --night:#A49CF5; --night-soft:#25224A;
+  --odo:#0C090E; --odo-ink:#F4F0F6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141017; --surface:#1E1822; --surface-2:#261F2B; --line:#352C3B;
+  --ink:#EEE8F1; --muted:#A79DAF; --accent:#E0A6DA; --accent-ink:#1E0F1C; --accent-soft:#3A2238;
+  --ok:#6BCB8F; --ok-soft:#1C3324; --warn:#E5B35E; --warn-soft:#3A2E17; --bad:#F48C86; --bad-soft:#3E1F21; --info:#8DB4EC; --info-soft:#1D2A3D;
+  --cold:#6EB0F5; --cold-soft:#172A40; --hot:#FF8A6E; --hot-soft:#3D1F19; --el:#F5C04E; --el-soft:#3A2E12; --night:#A49CF5; --night-soft:#25224A;
+  --odo:#0C090E; --odo-ink:#F4F0F6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:14px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px}
+.top h1{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.25;margin:0;flex:1;min-width:0;text-wrap:balance;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.proto{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+.back{border:0;background:var(--surface);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;flex:none}
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border-radius:var(--r);padding:14px 16px}
+.label{font-size:13px;color:var(--muted);font-weight:500}
+.num{font-variant-numeric:tabular-nums}
+.big{font-family:var(--display);font-weight:500;font-size:26px;letter-spacing:-.01em}
+.sum3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum3 .card{padding:12px 14px}
+.sum3 .wide{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.bar{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);margin:8px 2px -4px}
+.list{background:var(--surface);border-radius:var(--r);overflow:hidden}
+.row{display:flex;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);min-width:0}
+.row:first-child{border-top:0}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:500;overflow-wrap:anywhere}
+.row .s{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.row.tap{cursor:pointer}
+.row.tap:hover{background:var(--surface-2)}
+.date{width:46px;flex:none;text-align:center;border-radius:10px;background:var(--surface-2);padding:5px 0;line-height:1.1}
+.date b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+.date small{font-size:11px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--ok-soft);color:var(--ok)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--info-soft);color:var(--info)} .p-mute{background:var(--surface-2);color:var(--muted)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.obj{display:flex;flex-direction:column;gap:10px;cursor:pointer;border:1px solid transparent}
+.obj:hover{border-color:var(--line)}
+.obj .head{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.obj .addr{font-weight:600;overflow-wrap:anywhere;min-width:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:13px}
+.type{font-size:13px;font-weight:600;color:var(--accent)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:10px}
+.btn.wide{width:100%}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.nav button:focus-visible,.back:focus-visible,.row.tap:focus-visible,.obj:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{flex:1;border:0;background:none;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;font-size:14px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.note{font-size:13px;color:var(--muted)}
+.alert{border-radius:12px;padding:10px 14px;font-size:14px}
+.alert.warn{background:var(--warn-soft);color:var(--warn)} .alert.bad{background:var(--bad-soft);color:var(--bad)} .alert.info{background:var(--info-soft);color:var(--info)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.nav div{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav button{border:0;background:none;padding:10px 4px 12px;cursor:pointer;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav button[aria-current="page"]{color:var(--accent);font-weight:600}
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(10,16,14,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:480px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding-block:18px calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+.sheet h3{font-family:var(--display);font-weight:500;font-size:18px;margin:0}
+.f{display:flex;flex-direction:column;gap:5px}
+.f label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.f input,.f select{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.f input:focus,.f select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--bad);font-size:13px}
+.check{display:flex;gap:8px;align-items:center}
+.onb{min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:16px;padding-block:24px;max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.onb h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0;text-wrap:balance}
+.role{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.role:hover{border-color:var(--accent)}
+.role b{font-size:17px}
+.zones{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.zones legend{font-size:13px;color:var(--muted);padding:0 4px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.zones .grid2,.zones .grid3{gap:8px}
+@media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}}
+.thumb{width:46px;height:46px;flex:none;border-radius:10px;object-fit:cover;background:var(--surface-2)}
+.photo-drop{display:flex;align-items:center;justify-content:center;min-height:120px;border:1.5px dashed var(--line);border-radius:12px;background:var(--surface-2);cursor:pointer;color:var(--accent);font-weight:600;text-align:center;padding:12px;overflow:hidden}
+.photo-drop img{max-height:220px;border-radius:8px}
+.photo-drop:focus-within{outline:2px solid var(--accent)}
+.photo-big{width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:var(--surface-2)}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.tenant{background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--accent) 70%,var(--hot)) 0%,var(--accent) 55%);color:var(--accent-ink);border-radius:18px;padding:18px}
+.tenant .big{font-size:30px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px)}
+table.fin{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+table.fin th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:8px 6px}
+table.fin th:first-child,table.fin td:first-child{text-align:left}
+table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
+.scrollx{overflow-x:auto}
+/* Иконки-значки: двухцветные глифы на мягкой подложке */
+.ico{--t:var(--accent);--ts:var(--accent-soft);width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;background:var(--ts);color:var(--t)}
+.ico svg,.mi svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ico .fl,.mi .fl{fill:currentColor;fill-opacity:.22}
+.ico .sd,.mi .sd{fill:currentColor;stroke:none}
+.ico.lg{width:48px;height:48px;border-radius:14px}.ico.lg svg{width:28px;height:28px}
+.ico.sm{width:32px;height:32px;border-radius:10px}.ico.sm svg{width:20px;height:20px}
+.mi{--t:var(--accent);color:var(--t);display:inline-flex;vertical-align:-4px}.mi svg{width:18px;height:18px}
+.t-cold{--t:var(--cold);--ts:var(--cold-soft)}.t-hot{--t:var(--hot);--ts:var(--hot-soft)}.t-el{--t:var(--el);--ts:var(--el-soft)}.t-night{--t:var(--night);--ts:var(--night-soft)}
+.t-ok{--t:var(--ok);--ts:var(--ok-soft)}.t-bad{--t:var(--bad);--ts:var(--bad-soft)}.t-warn{--t:var(--warn);--ts:var(--warn-soft)}.t-info{--t:var(--info);--ts:var(--info-soft)}.t-mute{--t:var(--muted);--ts:var(--surface-2)}.t-acc{--t:var(--accent);--ts:var(--accent-soft)}
+/* Плитки счётчиков с «барабанами» цифр, как в окошке настоящего счётчика */
+.util{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.ut{background:var(--surface);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;border-top:3px solid var(--t);min-width:0}
+.ut .h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;line-height:1.2}
+.odo{display:inline-flex;gap:2px;padding:4px;border-radius:8px;background:var(--odo);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--t) 70%,transparent);align-self:start;max-width:100%;overflow:hidden}
+.odo i{font-style:normal;font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;width:14px;text-align:center;border-radius:3px;color:var(--odo-ink);background:linear-gradient(#ffffff14,#0000 45%,#00000040)}
+.odo i.fr{background:var(--hot);color:#fff}
+.ut .d{font-size:13px;color:var(--muted)}.ut .d b{color:var(--ink);font-weight:600}
+.total{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rd{display:flex;flex-wrap:wrap;gap:4px 12px}.rd span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);border-radius:12px;padding:4px}
+.seg button{border:0;background:none;border-radius:9px;padding:8px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px #0002}
+.seg button:focus-visible{outline:2px solid var(--accent)}
+
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+(function(){
+const KEY='arenda-proto-v1';const TKEY='arenda-theme';
+let THEME='auto';try{THEME=localStorage.getItem(TKEY)||'auto'}catch(e){}
+const applyTheme=()=>{if(THEME==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=THEME};applyTheme();
+const MONTHS=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MON_S=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c||1)};
+const T=new Date();T.setHours(0,0,0,0);const TODAY=ymd(T);
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
+const addMonths=(s,n)=>{const d=parse(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return ymd(d)};
+const mkey=s=>s.slice(0,7);
+const daysBetween=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const rub=n=>(Math.round(n)||0).toLocaleString('ru-RU')+'\u00a0₽';
+const fdate=s=>{const d=parse(s);return d.getDate()+' '+MON_S[d.getMonth()]};
+const fdateY=s=>{const d=parse(s);return d.getDate()+' '+MON_S[d.getMonth()]+' '+d.getFullYear()};
+const mname=k=>{const[y,m]=k.split('-').map(Number);return MONTHS[m-1]+' '+y};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function sample(){
+  const cur=mkey(TODAY);
+  const m1=TODAY.slice(0,8)+'01';
+  const o1={id:uid(),type:'long',name:'Москва, ул. Профсоюзная, 64, кв. 112',area:42,rooms:1,rent:45000,payDay:1,
+    tenant:{name:'Анна Смирнова',phone:'+7 916 000-00-00'},contract:{start:addMonths(m1,-6),end:addDays(TODAY,24),deposit:45000},
+    payments:{},meters:[],tariffs:{cold:52.5,hot:271.4,el:7.8,el1:8.9,el2:3.6,el3:7.1},elMode:'t2',expenses:[],owner:'',commission:0};
+  for(let i=-6;i<=0;i++){const k=mkey(addMonths(m1,i));o1.payments[k]={amount:45000,date:addMonths(m1,i)}}
+  o1.meters=[{date:addMonths(TODAY.slice(0,8)+'20',-2),cold:412,hot:180,el1:11240,el2:3970},{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:419,hot:183,el1:11371,el2:4027}];
+  o1.expenses=[{id:uid(),date:addMonths(m1,-3),cat:'Ремонт',amount:6800,note:'Замена смесителя'},{id:uid(),date:addMonths(m1,-1),cat:'Коммуналка',amount:5400,note:'Квитанция за месяц'}];
+  const o2={id:uid(),type:'long',name:'Химки, ул. Лавочкина, 9, кв. 31',area:36,rooms:1,rent:32000,payDay:3,
+    tenant:{name:'Игорь Петров',phone:'+7 925 000-00-00'},contract:{start:addMonths(m1,-10),end:addMonths(m1,8),deposit:32000},
+    payments:{},meters:[],tariffs:{cold:52.5,hot:271.4,el:7.8},expenses:[],owner:'',commission:0};
+  for(let i=-10;i<=-1;i++){const k=mkey(addMonths(m1,i));o2.payments[k]={amount:32000,date:addMonths(m1,i+0)}}
+  o2.payments[mkey(addMonths(m1,-1))]={amount:20000,date:addMonths(m1,-1)};
+  o2.meters=[{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:250,hot:98,el:8120}];
+  o2.expenses=[{id:uid(),date:addMonths(m1,-2),cat:'Мебель',amount:18900,note:'Новый диван'}];
+  const o3={id:uid(),type:'short',name:'Москва, Таганская ул., 25, студия',area:24,rooms:1,rent:4200,payDay:1,
+    tenant:{name:'',phone:''},contract:{start:'',end:'',deposit:0},payments:{},meters:[],tariffs:{cold:0,hot:0,el:0},
+    bookings:[
+      {id:uid(),guest:'Олег (Казань)',from:addDays(TODAY,-9),to:addDays(TODAY,-6),sum:12600,paid:true},
+      {id:uid(),guest:'Мария и Денис',from:addDays(TODAY,-1),to:addDays(TODAY,2),sum:12600,paid:true},
+      {id:uid(),guest:'Сергей',from:addDays(TODAY,4),to:addDays(TODAY,8),sum:16800,paid:false},
+      {id:uid(),guest:'Елена',from:addDays(TODAY,12),to:addDays(TODAY,14),sum:8400,paid:false}],
+    expenses:[{id:uid(),date:addDays(TODAY,-6),cat:'Уборка',amount:1500,note:'После выезда'}],owner:'',commission:0};
+  return {v:1,role:null,objects:[o1,o2,o3]};
+}
+function fixIds(d){d.objects.forEach(o=>(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()}));return d}
+function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.v===1)return fixIds(d)}}catch(e){}return fixIds(sample())}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}}
+let S=load();
+const ui={view:'home',objId:null,tab:null,filter:'all',sheet:null,err:'',photo:null,meterId:null};
+/* Сжимаем фото счётчика до ~900 px, чтобы оно помещалось в хранилище браузера */
+function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+  const k=Math.min(1,900/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.6))};img.src=r.result};r.readAsDataURL(file)})}
+
+/* ---------- расчёты ---------- */
+function dueDate(o,k){const[y,m]=k.split('-').map(Number);const last=new Date(y,m,0).getDate();return y+'-'+pad(m)+'-'+pad(Math.min(o.payDay,last))}
+function schedule(o){
+  if(o.type!=='long'||!o.contract.start)return[];
+  const out=[];let k=mkey(o.contract.start);const end=mkey(o.contract.end||TODAY);const lim=mkey(TODAY)<end?mkey(TODAY):end;
+  let guard=0;
+  while(k<=lim&&guard++<240){
+    const due=dueDate(o,k);const r=o.payments[k]||{amount:0};
+    let st;
+    if(r.amount>=o.rent)st='paid';else if(r.claimed)st='claimed';else if(r.amount>0)st=due<TODAY?'late':'partial';else st=due<TODAY?'late':'due';
+    out.push({k,due,rec:r,st,left:Math.max(0,o.rent-(r.amount||0))});
+    k=mkey(addMonths(k+'-01',1));
+  }
+  return out.reverse();
+}
+const ST={paid:['Оплачено','p-ok'],due:['Ожидается','p-info'],partial:['Частично','p-warn'],late:['Просрочено','p-bad'],claimed:['Ждёт подтверждения','p-warn']};
+function debt(o){return schedule(o).filter(x=>x.due<TODAY).reduce((a,x)=>a+x.left,0)}
+function objStatus(o){
+  if(o.type==='long'){
+    if(!o.tenant.name)return['Свободна','p-mute'];
+    const s=schedule(o);if(!s.length)return['Нет платежей','p-mute'];
+    if(s.some(x=>x.st==='late'))return['Долг '+rub(debt(o)),'p-bad'];
+    if(s.some(x=>x.st==='claimed'))return['Проверьте оплату','p-warn'];
+    return ST[s[0].st];
+  }
+  const now=(o.bookings||[]).find(b=>b.from<=TODAY&&b.to>TODAY);
+  if(now)return['Гость до '+fdate(now.to),'p-ok'];
+  const next=(o.bookings||[]).filter(b=>b.from>TODAY).sort((a,b)=>a.from<b.from?-1:1)[0];
+  return next?['Свободна до '+fdate(next.from),'p-info']:['Свободна','p-mute'];
+}
+function monthSummary(){
+  const k=mkey(TODAY);let expected=0,received=0;
+  S.objects.forEach(o=>{
+    if(o.type==='long'&&o.tenant.name&&o.contract.end>=TODAY.slice(0,8)+'01'){expected+=o.rent;received+=Math.min(o.rent,(o.payments[k]||{}).amount||0)}
+    if(o.type==='short')(o.bookings||[]).forEach(b=>{if(mkey(b.from)===k){expected+=b.sum;if(b.paid)received+=b.sum}});
+  });
+  const totalDebt=S.objects.reduce((a,o)=>a+(o.type==='long'?debt(o):0),0);
+  return{expected,received,totalDebt};
+}
+function events(){
+  const ev=[];
+  S.objects.forEach(o=>{
+    const short=o.name.split(',').slice(0,2).join(',');
+    if(o.type==='long'&&o.tenant.name){
+      schedule(o).forEach(x=>{if(x.st==='late')ev.push({d:x.due,t:'Просрочена оплата '+rub(x.left),s:short,c:'p-bad',i:'coin',id:o.id,tab:'pay'});
+        if(x.st==='claimed')ev.push({d:x.rec.claimDate||TODAY,t:'Арендатор отметил оплату',s:short,c:'p-warn',i:'coin',id:o.id,tab:'pay'})});
+      const nk=mkey(addMonths(TODAY.slice(0,8)+'01',1));const cur=schedule(o)[0];
+      const nd=cur&&(cur.st==='due'||cur.st==='partial')?cur.due:dueDate(o,nk);
+      if(nd<=o.contract.end)ev.push({d:nd,t:'Оплата '+rub(o.rent),s:short,c:'p-info',i:'coin',id:o.id,tab:'pay'});
+      const left=daysBetween(TODAY,o.contract.end);
+      if(left>=0&&left<=45)ev.push({d:o.contract.end,t:'Конец договора через '+left+' дн.',s:short,c:'p-warn',i:'doc',id:o.id,tab:'contract'});
+      (o.meters||[]).forEach(m=>{if(m.status==='check')ev.push({d:m.date,t:'Проверить показания по фото',s:short,c:'p-warn',i:'camera',id:o.id,tab:'meters'})});
+      const md=TODAY.slice(0,8)+'20';const last=o.meters[o.meters.length-1];
+      if(md>=TODAY&&(!last||mkey(last.date)<mkey(TODAY)))ev.push({d:md,t:'Передать показания',s:short,c:'p-mute',i:'gauge',id:o.id,tab:'meters'});
+    }
+    if(o.type==='short')(o.bookings||[]).forEach(b=>{
+      if(b.from>=TODAY&&daysBetween(TODAY,b.from)<=14)ev.push({d:b.from,t:'Заезд: '+b.guest,s:short,c:'p-ok',i:'key',id:o.id,tab:'book'});
+      if(b.to>=TODAY&&daysBetween(TODAY,b.to)<=14)ev.push({d:b.to,t:'Выезд и уборка: '+b.guest,s:short,c:'p-mute',i:'sparkle',id:o.id,tab:'book'});
+    });
+  });
+  return ev.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+}
+function yearFin(o,y){
+  const ys=String(y);let inc=0;
+  if(o.type==='long')Object.entries(o.payments).forEach(([k,r])=>{if(k.startsWith(ys))inc+=r.amount||0});
+  else (o.bookings||[]).forEach(b=>{if(b.from.startsWith(ys)&&b.paid)inc+=b.sum});
+  const exp=(o.expenses||[]).filter(e=>e.date.startsWith(ys)).reduce((a,e)=>a+e.amount,0);
+  const com=S.role==='agent'?inc*(o.commission||0)/100:0;
+  return{inc,exp,com,net:inc-exp-com};
+}
+const LIMIT={private:5,agent:Infinity};
+/* Счётчики: вода + электричество с 1, 2 или 3 тарифами (режим задаётся в карточке объекта) */
+const EL_MODES={single:'Однотарифный',t2:'Двухтарифный (Т1, Т2)',t3:'Трёхтарифный (Т1, Т2, Т3)'};
+function elKeys(o){const m=o.elMode||'single';
+  if(m==='t2')return[['el1','Т1 день'],['el2','Т2 ночь']];
+  if(m==='t3')return[['el1','Т1 пик'],['el2','Т2 ночь'],['el3','Т3 полупик']];
+  return[['el','Электричество']]}
+function mKeys(o){return[['cold','Холодная вода','м³'],['hot','Горячая вода','м³'],...elKeys(o).map(([k,l])=>[k,l,'кВт·ч'])]}
+const has=(r,k)=>typeof r[k]==='number'&&!isNaN(r[k]);
+function elSum(o,r){const ks=elKeys(o).map(x=>x[0]);return ks.every(k=>has(r,k))?ks.reduce((a,k)=>a+r[k],0):null}
+function readTxt(o,r){return '<span class="rd">'+mKeys(o).map(([k,l])=>`<span title="${l}">${mi(...MI[k])}${has(r,k)?r[k]:'—'}</span>`).join('')+'</span>'}
+function meterFields(o,pre,vals,ro){const ek=elKeys(o);
+  const water=`<div class="grid2">${f(pre+'cold',mi('cold','cold')+'Холодная вода, м³','number',vals.cold??'','step="0.01" required')}${f(pre+'hot',mi('hot','hot')+'Горячая вода, м³','number',vals.hot??'','step="0.01" required')}</div>`;
+  if(ek.length===1)return water+f(pre+'el',mi('el','el')+'Электричество, кВт·ч','number',vals.el??'','step="0.01" required');
+  return water+`<fieldset class="zones"><legend>${mi('el','el')} Электричество, кВт·ч · ${EL_MODES[o.elMode]}</legend><div class="grid${ek.length}">${ek.map(([k,l])=>f(pre+k,mi(...MI[k])+l,'number',vals[k]??'','step="0.01" required data-zone="'+pre+'"')).join('')}</div>
+    <div class="note num" data-total="${pre}">Всего: ${elSum(o,vals)??'—'}</div></fieldset>`}
+function readForm(o,g,pre){const r={};for(const[k]of mKeys(o)){const v=g(pre+k);if(v===null||v===''||isNaN(Number(v)))return null;r[k]=Number(v)}return r}
+function lessThan(o,a,b){return mKeys(o).some(([k])=>has(a,k)&&has(b,k)&&a[k]<b[k])}
+
+/* ---------- иконки ---------- */
+const DROP='<path class="fl" d="M12 2.8c3.6 4.3 6.2 7.8 6.2 10.9a6.2 6.2 0 0 1-12.4 0c0-3.1 2.6-6.6 6.2-10.9z"/>';
+const G={
+  cold:DROP+'<path d="M12 11v6.4M9.2 12.6l5.6 3.2M14.8 12.6l-5.6 3.2"/>',
+  hot:DROP+'<path class="sd" d="M12 18.2c-1.6 0-2.6-1.1-2.6-2.5 0-1.5 1.3-2.2 1.7-3.7 1 .7 1.5 1.5 1.5 2.4.4-.3.7-.9.8-1.3.8.7 1.2 1.6 1.2 2.6 0 1.4-1.1 2.5-2.6 2.5z"/>',
+  el:'<path class="fl" d="M13.5 2.5 5 13.6h6l-1.2 7.9 8.7-11.4h-6z"/>',
+  sun:'<circle class="fl" cx="12" cy="12" r="4.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+  moon:'<path class="fl" d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/><path d="M17 4.5v3M15.5 6h3"/>',
+  dusk:'<path class="fl" d="M6.5 16.5a5.5 5.5 0 0 1 11 0z"/><path d="M3 16.5h18M7 20h10M12 5v2.5M5.6 8.6l1.6 1.6M18.4 8.6l-1.6 1.6"/>',
+  wrench:'<path class="fl" d="M14.6 6.3a4.2 4.2 0 0 0-5.4 5.3L3.8 17l3.2 3.2 5.4-5.4a4.2 4.2 0 0 0 5.3-5.4l-2.5 2.5-2.7-.6-.6-2.7z"/>',
+  sofa:'<path d="M5.5 11V8.2a2.2 2.2 0 0 1 2.2-2.2h8.6a2.2 2.2 0 0 1 2.2 2.2V11"/><path class="fl" d="M3 13.2a2 2 0 0 1 4 0v1.8h10v-1.8a2 2 0 0 1 4 0V18H3z"/><path d="M5 18v2M19 18v2"/>',
+  receipt:'<path class="fl" d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>',
+  sparkle:'<path class="fl" d="M11 3.5l1.9 4.8 4.8 1.9-4.8 1.9L11 17l-1.9-4.9-4.8-1.9 4.8-1.9z"/><path d="M18 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+  percent:'<path class="fl" d="M6 3h8.5L18 6.5V21H6z"/><path d="M9.5 16.5l5-6"/><circle cx="10" cy="11" r="1.1"/><circle cx="14" cy="16" r="1.1"/>',
+  house:'<path class="fl" d="M5 10.2 12 4.5l7 5.7V20H5z"/><path d="M3 11.5 12 4l9 7.5M10 20v-5h4v5"/>',
+  dots:'<circle class="sd" cx="6" cy="12" r="1.7"/><circle class="sd" cx="12" cy="12" r="1.7"/><circle class="sd" cx="18" cy="12" r="1.7"/>',
+  coin:'<circle class="fl" cx="12" cy="12" r="8.5"/><path d="M10.2 7.5v9M10.2 7.5h3a2.3 2.3 0 0 1 0 4.6H8.8M8.8 14.5h4.4"/>',
+  doc:'<path class="fl" d="M6 3h8.5L18 6.5V21H6z"/><path d="M14.5 3v3.5H18M9 11h6M9 14.5h6M9 18h3.5"/>',
+  gauge:'<path class="fl" d="M3.8 16a8.2 8.2 0 1 1 16.4 0z"/><path d="M12 16l3.6-4.4M3 19h18"/><circle class="sd" cx="12" cy="16" r="1.3"/>',
+  key:'<circle class="fl" cx="7.5" cy="15.5" r="3.8"/><path d="M10.3 12.8 18.5 4.6M15.5 7.6l2.2 2.2M17.8 5.3l2 2"/>',
+  bag:'<rect class="fl" x="4" y="8" width="16" height="11.5" rx="2.2"/><path d="M9 8V5.6h6V8M4 13.2h16"/>',
+  camera:'<path class="fl" d="M4 8.2h3.2L8.8 6h6.4l1.6 2.2H20V19H4z"/><circle cx="12" cy="13.4" r="3.4"/>',
+  building:'<rect class="fl" x="5" y="3" width="14" height="18" rx="1.8"/><path d="M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M9 15h1.5M13.5 15H15M10.5 21v-2.5h3V21"/>',
+  bed:'<path d="M3 18.5V6.5"/><path class="fl" d="M3 13h18v5.5H3zM10 13V9.5h7.5a3.5 3.5 0 0 1 3.5 3.5"/><circle cx="6.6" cy="10.6" r="1.7"/><path d="M21 18.5v1.5M3 18.5v1.5"/>'};
+const svg=n=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+(G[n]||G.dots)+'</svg>';
+const ico=(n,t='acc',sz='')=>`<span class="ico t-${t} ${sz}">${svg(n)}</span>`;
+const mi=(n,t)=>`<span class="mi t-${t}">${svg(n)}</span>`;
+/* какой иконкой и цветом рисовать каждый счётчик */
+const MI={cold:['cold','cold'],hot:['hot','hot'],el:['el','el'],el1:['sun','el'],el2:['moon','night'],el3:['dusk','el']};
+const CAT={'Ремонт':['wrench','acc'],'Мебель':['sofa','night'],'Мебель и техника':['sofa','night'],'Коммуналка':['receipt','cold'],'Уборка':['sparkle','ok'],'Налоги':['percent','bad'],'Ипотека':['house','el'],'Другое':['dots','mute']};
+const catIco=c=>{const[n,t]=CAT[c]||CAT['Другое'];return ico(n,t)};
+function odo(v,u){const n=Number(v)||0;const fd=u==='м³'?2:1;const[a,b]=n.toFixed(fd).split('.');
+  return `<span class="odo" role="img" aria-label="${n}">${a.padStart(5,'0').split('').map(c=>`<i>${c}</i>`).join('')}${b.split('').map(c=>`<i class="fr">${c}</i>`).join('')}</span>`}
+
+/* ---------- вид ---------- */
+const ICON={
+  home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
+  objects:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>',
+  finance:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  profile:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'};
+function top(title,back){return `<header class="top">${back?`<button class="back" data-act="back" aria-label="Назад">←</button>`:''}<h1>${esc(title)}</h1><span class="proto">прототип</span></header>`}
+function nav(){const it=[['home','Главная'],['objects','Объекты'],['finance','Финансы'],['profile','Профиль']];
+  const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view;
+  return `<nav class="nav"><div>${it.map(([k,l])=>`<button data-nav="${k}" ${v===k?'aria-current="page"':''}>${ICON[k]}${l}</button>`).join('')}</div></nav>`}
+function dateBox(s){const d=parse(s);return `<div class="date"><b>${d.getDate()}</b><small>${MON_S[d.getMonth()]}</small></div>`}
+
+function vOnboard(){
+  return `<div class="onb">
+    <span class="proto" style="align-self:start">прототип</span>
+    <h1>Учёт аренды</h1>
+    <p class="note" style="font-size:15px">Квартиры, оплаты, показания счётчиков и брони в одном месте. Выберите, как вы работаете: от этого зависят функции и тариф.</p>
+    <button class="role" data-role="private"><b>Частник</b><span class="note">Сдаю свои квартиры. 1 объект бесплатно, до 5 по подписке.</span></button>
+    <button class="role" data-role="agent"><b>Агент</b><span class="note">Управляю квартирами собственников: комиссия и отчёты собственнику.</span></button>
+    <p class="note">В прототипе уже заведены три примера объектов. Данные хранятся только в этом браузере.</p>
+  </div>`}
+
+function vHome(){
+  const m=monthSummary();const pct=m.expected?Math.round(m.received/m.expected*100):0;
+  const ev=events().slice(0,7);
+  const k=mkey(TODAY);
+  return top('Главная')+`<main>
+    <div class="sum3">
+      <div class="card wide"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div><div class="note num">из ${rub(m.expected)} ожидаемых</div>
+        <div class="bar" style="width:100%" role="img" aria-label="Получено ${pct}%"><i style="width:${pct}%"></i></div></div>
+      <div class="card"><div class="label">Долги</div><div class="big num" style="font-size:20px;color:${m.totalDebt?'var(--bad)':'inherit'}">${rub(m.totalDebt)}</div></div>
+      <div class="card"><div class="label">Объектов</div><div class="big num" style="font-size:20px">${S.objects.length}</div></div>
+    </div>
+    <h2>Ближайшие события</h2>
+    <div class="list">${ev.length?ev.map(e=>`<div class="row tap" tabindex="0" data-open="${e.id}" data-tab="${e.tab}">${dateBox(e.d)}<div class="main"><div class="t">${esc(e.t)}</div><div class="s">${esc(e.s)}</div></div>${ico(e.i,e.c.slice(2),'sm')}</div>`).join(''):'<div class="row"><div class="main note">Событий нет</div></div>'}</div>
+  </main>`}
+
+function vObjects(){
+  const f=ui.filter;const list=S.objects.filter(o=>f==='all'||o.type===f);
+  const lim=LIMIT[S.role];
+  return top('Объекты')+`<main>
+    <div class="chips" role="group" aria-label="Фильтр">${[['all','Все'],['long','Долгосрочные'],['short','Посуточные']].map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+    ${list.map(o=>{const[st,c]=objStatus(o);return `<div class="card obj" tabindex="0" data-open="${o.id}">
+      <div class="head"><div style="display:flex;gap:12px;min-width:0">${o.type==='long'?ico('building','acc','lg'):ico('bed','night','lg')}<div style="min-width:0"><div class="type">${o.type==='long'?'Долгосрочная':'Посуточная'}</div><div class="addr">${esc(o.name)}</div></div></div><span class="pill ${c}">${esc(st)}</span></div>
+      <div class="meta num"><span>${o.area} м²</span><span>${o.type==='long'?rub(o.rent)+' / мес':rub(o.rent)+' / сутки'}</span>${o.type==='long'&&o.tenant.name?`<span>${esc(o.tenant.name)}</span>`:''}${S.role==='agent'&&o.owner?`<span>Собственник: ${esc(o.owner)}</span>`:''}</div>
+    </div>`}).join('')||'<div class="card note">Нет объектов этого типа</div>'}
+    <button class="btn wide" data-act="addObj">Добавить объект</button>
+    ${S.role==='private'?`<p class="note">Тариф «Частник»: ${S.objects.length} из ${lim} объектов.</p>`:''}
+  </main>`}
+
+function vObject(){
+  const o=S.objects.find(x=>x.id===ui.objId);if(!o){ui.view='objects';return vObjects()}
+  const tabs=o.type==='long'?[['contract','Договор'],['pay','Платежи'],['meters','Счётчики'],['exp','Расходы']]:[['book','Брони'],['exp','Расходы']];
+  if(!tabs.some(t=>t[0]===ui.tab))ui.tab=tabs[0][0];
+  const[st,c]=objStatus(o);
+  let body='';
+  if(ui.tab==='contract'){
+    const left=o.contract.end?daysBetween(TODAY,o.contract.end):null;
+    body=`${left!==null&&left>=0&&left<=45?`<div class="alert warn">Договор заканчивается через ${left} дн. Продлить, изменить цену или искать нового жильца?</div>`:''}
+    <div class="card"><dl class="kv">
+      <dt>Арендатор</dt><dd>${esc(o.tenant.name)||'—'}</dd>
+      <dt>Телефон</dt><dd>${esc(o.tenant.phone)||'—'}</dd>
+      <dt>Срок</dt><dd>${o.contract.start?fdateY(o.contract.start)+' — '+fdateY(o.contract.end):'—'}</dd>
+      <dt>Плата</dt><dd>${rub(o.rent)} в месяц</dd>
+      <dt>Дата оплаты</dt><dd>${o.payDay}-е число</dd>
+      <dt>Залог</dt><dd>${rub(o.contract.deposit)}</dd>
+      ${S.role==='agent'?`<dt>Собственник</dt><dd>${esc(o.owner)||'—'}</dd><dt>Комиссия</dt><dd>${o.commission||0}%</dd>`:''}
+    </dl></div>
+    <button class="btn ghost wide" data-act="invite">Пригласить арендатора</button>
+    <button class="btn ghost wide" data-act="tenantView">Как видит арендатор</button>`;
+  }
+  if(ui.tab==='pay'){
+    const s=schedule(o);
+    body=`${debt(o)?`<div class="alert bad">Долг: ${rub(debt(o))}</div>`:''}
+    <div class="list">${s.map(x=>`<div class="row"><div class="main"><div class="t" style="text-transform:capitalize">${mname(x.k)}</div><div class="s num">${x.st==='paid'?'Оплачено '+fdate(x.rec.date):x.rec.amount?'Внесено '+rub(x.rec.amount)+', осталось '+rub(x.left):'Срок '+fdate(x.due)+' · '+rub(o.rent)}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:end"><span class="pill ${ST[x.st][1]}">${ST[x.st][0]}</span>
+      ${x.st==='claimed'?`<button class="btn small" data-confirm="${x.k}">Подтвердить</button>`:x.st!=='paid'?`<button class="btn small ghost" data-pay="${x.k}">Отметить оплату</button>`:''}</div></div>`).join('')||'<div class="row note">Нет платежей</div>'}</div>
+    <p class="note">После получения оплаты самозанятому нужно сформировать чек в «Моём налоге».</p>`;
+  }
+  if(ui.tab==='meters'){
+    const m=o.meters;const a=m[m.length-2],b=m[m.length-1];
+    let calc='';
+    if(b){const t=o.tariffs;let sum=0,full=!!a;
+      const tiles=mKeys(o).map(([k,l,u])=>{const[gn,tn]=MI[k];let d='<span class="d">Нет прошлых показаний</span>';
+        if(a&&has(a,k)&&has(b,k)){const dv=+(b[k]-a[k]).toFixed(2);const pr=t[k]||0;sum+=dv*pr;d=`<span class="d num">+${dv} ${u} · <b>${rub(dv*pr)}</b></span>`}else full=false;
+        return `<div class="ut t-${tn}">${'<div class="h">'+ico(gn,tn,'sm')+'<span>'+l+'</span></div>'}${has(b,k)?odo(b[k],u):'<span class="d">—</span>'}${d}</div>`}).join('');
+      calc=`<div class="util">${tiles}</div>${a?`<div class="card total"><div><div class="label">Коммуналка за ${fdate(a.date)} — ${fdate(b.date)}</div><div class="note">Тарифы-примеры, введите свои${full?'':'. Часть счётчиков не с чем сравнить'}</div></div><div class="big num" style="font-size:22px">${rub(sum)}</div></div>`:''}`}
+    const toCheck=m.filter(r=>r.status==='check').length;
+    body=`${toCheck?`<div class="alert warn">Арендатор передал показания: ${toCheck}. Сверьте цифры с фото и подтвердите.</div>`:''}${calc}<h2>История показаний</h2><div class="list">${m.slice().reverse().map(r=>`<div class="row tap" tabindex="0" data-meter="${r.id}">${r.photo?`<img class="thumb" src="${r.photo}" alt="Фото счётчика">`:ico('gauge','mute')}<div class="main num"><div class="t">${readTxt(o,r)}</div><div class="s">${fdate(r.date)}${r.by==='tenant'?' · от арендатора':''}${r.fixed?' · исправлено':''}${r.photo?'':' · без фото'}</div></div>${r.status==='check'?'<span class="pill p-warn">Проверить</span>':'<span class="pill p-ok">Принято</span>'}</div>`).join('')||'<div class="row note">Показаний пока нет</div>'}</div>
+    <div class="grid2"><button class="btn" data-act="addMeter">Внести показания</button><button class="btn ghost" data-act="tariffs">Тарифы</button></div>`;
+  }
+  if(ui.tab==='exp'){
+    const e=(o.expenses||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+    body=`<div class="list">${e.map(x=>`<div class="row">${catIco(x.cat)}<div class="main"><div class="t">${esc(x.cat)}</div><div class="s">${fdateY(x.date)}${x.note?' · '+esc(x.note):''}</div></div><b class="num">${rub(x.amount)}</b></div>`).join('')||'<div class="row note">Расходов пока нет</div>'}</div>
+    <button class="btn wide" data-act="addExp">Добавить расход</button>`;
+  }
+  if(ui.tab==='book'){
+    const bs=(o.bookings||[]).slice().sort((a,b)=>a.from<b.from?1:-1);
+    body=`<div class="list">${bs.map(b=>{const n=daysBetween(b.from,b.to);const now=b.from<=TODAY&&b.to>TODAY;const past=b.to<=TODAY;
+      return `<div class="row">${dateBox(b.from)}<div class="main"><div class="t">${esc(b.guest)}</div><div class="s num">${fdate(b.from)} — ${fdate(b.to)} · ${n} ноч. · ${rub(b.sum)}</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:end"><span class="pill ${now?'p-ok':past?'p-mute':'p-info'}">${now?'Живёт':past?'Выехал':'Впереди'}</span>
+      ${b.paid?'<span class="note">Оплачено</span>':`<button class="btn small ghost" data-bpay="${b.id}">Отметить оплату</button>`}</div></div>`}).join('')||'<div class="row note">Броней пока нет</div>'}</div>
+    <button class="btn wide" data-act="addBook">Добавить бронь</button>`;
+  }
+  return top(o.name.split(',').slice(1).join(',').trim()||o.name,true)+`<main>
+    <div class="card"><div class="type">${o.type==='long'?'Долгосрочная':'Посуточная'}</div><div style="font-weight:600;overflow-wrap:anywhere">${esc(o.name)}</div>
+      <div class="meta num" style="margin-top:6px"><span>${o.area} м²</span><span>${o.rooms} комн.</span><span class="pill ${c}">${esc(st)}</span></div></div>
+    <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" data-tab-sel="${k}" aria-selected="${ui.tab===k}">${l}</button>`).join('')}</div>
+    ${body}
+  </main>`;
+}
+
+function vTenant(){
+  const o=S.objects.find(x=>x.id===ui.objId);
+  const s=schedule(o);const cur=s.find(x=>x.st!=='paid');
+  const next=cur||{due:dueDate(o,mkey(addMonths(TODAY.slice(0,8)+'01',1))),left:o.rent,st:'due'};
+  const last=o.meters[o.meters.length-1];
+  return top('Экран арендатора',true)+`<main>
+    <div class="alert info">Так квартиру видит ${esc(o.tenant.name||'арендатор')}. Действия здесь сразу появляются у арендодателя.</div>
+    <div class="tenant"><div class="label" style="color:inherit;opacity:.8">${next.st==='late'?'Оплата просрочена':'Следующая оплата'}</div>
+      <div class="big num">${rub(next.left)}</div><div>до ${fdateY(next.due)}</div>
+      ${cur&&cur.st==='claimed'?'<p style="margin:10px 0 0">Вы отметили оплату. Ждём подтверждения арендодателя.</p>':cur?`<button class="btn ghost" style="margin-top:12px" data-claim="${cur.k}">Я оплатил</button>`:''}</div>
+    <div class="card"><div class="label">Квартира</div><div style="font-weight:600">${esc(o.name)}</div><div class="note">Договор до ${o.contract.end?fdateY(o.contract.end):'—'}</div></div>
+    <div class="card"><div class="label">Последние показания${last?' · '+fdate(last.date):''}</div><div class="num" style="margin-top:6px">${last?readTxt(o,last):'Пока нет'}</div></div>
+    <button class="btn wide" data-act="addMeterTenant">Передать показания</button>
+    <button class="btn ghost wide" data-act="repair">Сообщить о поломке</button>
+  </main>`;
+}
+
+function vFinance(){
+  const y=T.getFullYear();const rows=S.objects.map(o=>({o,...yearFin(o,y)}));
+  const tot=rows.reduce((a,r)=>({inc:a.inc+r.inc,exp:a.exp+r.exp,com:a.com+r.com,net:a.net+r.net}),{inc:0,exp:0,com:0,net:0});
+  const ag=S.role==='agent';
+  return top('Финансы')+`<main>
+    <div class="sum3"><div class="card wide"><div><div class="label">Чистый доход за ${y}</div><div class="big num">${rub(tot.net)}</div></div><div class="note num">доход ${rub(tot.inc)} · расходы ${rub(tot.exp)}</div></div></div>
+    <h2>По объектам</h2>
+    <div class="card scrollx"><table class="fin"><tr><th>Объект</th><th>Доход</th><th>Расходы</th>${ag?'<th>Комиссия</th>':''}<th>Итог</th></tr>
+      ${rows.map(r=>`<tr><td>${esc(r.o.name.split(',').slice(1,3).join(',').trim())}</td><td>${rub(r.inc)}</td><td>${rub(r.exp)}</td>${ag?`<td>${rub(r.com)}</td>`:''}<td><b>${rub(r.net)}</b></td></tr>`).join('')}
+    </table></div>
+    <p class="note">${ag?'Комиссия агента считается от полученного дохода по каждому объекту. Отчёт собственнику появится в следующей версии.':'Доход учитывает полученные оплаты; посуточные брони считаются по дате заезда.'}</p>
+  </main>`;
+}
+
+function vProfile(){
+  const r=S.role==='agent'?'Агент':'Частник';
+  return top('Профиль')+`<main>
+    <div class="card"><dl class="kv"><dt>Роль</dt><dd>${r}</dd><dt>Тариф</dt><dd>${S.role==='agent'?'Агент (без лимита в прототипе)':S.objects.length<=1?'Бесплатный, 1 объект':'Подписка, до 5 объектов'}</dd><dt>Объектов</dt><dd>${S.objects.length}</dd></dl></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:8px"><div class="label">Тема оформления</div>
+      <div class="seg" role="group" aria-label="Тема">${[['auto','Как в системе'],['light','Светлая'],['dark','Тёмная']].map(([k,l])=>`<button data-theme-set="${k}" aria-pressed="${THEME===k}">${l}</button>`).join('')}</div></div>
+    <button class="btn ghost wide" data-act="switchRole">Сменить роль на «${S.role==='agent'?'Частник':'Агент'}»</button>
+    <button class="btn ghost wide" data-act="reset">Вернуть примеры данных</button>
+    <p class="note">Это прототип: данные хранятся только в этом браузере и не видны на других устройствах. В рабочей версии будут вход по телефону, сервер и push-уведомления.</p>
+  </main>`;
+}
+
+/* ---------- формы ---------- */
+const f=(id,label,type='text',val='',extra='')=>`<div class="f"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" value="${esc(val)}" ${extra}></div>`;
+function sheet(){
+  const o=S.objects.find(x=>x.id===ui.objId);const s=ui.sheet;let h='';
+  if(s==='addObj')h=`<h3>Новый объект</h3>
+    <div class="f"><label for="o_type">Тип аренды</label><select id="o_type" name="o_type"><option value="long">Долгосрочная</option><option value="short">Посуточная</option></select></div>
+    ${f('o_name','Адрес','text','','required placeholder="Город, улица, дом, квартира"')}
+    <div class="grid2">${f('o_area','Площадь, м²','number','','min="1" required')}${f('o_rooms','Комнат','number','1','min="1"')}</div>
+    ${f('o_rent','Плата, ₽ (в месяц или за сутки)','number','','min="1" required')}
+    <p class="note">Для долгосрочной аренды:</p>
+    <div class="grid2">${f('o_tn','Арендатор')}${f('o_tp','Телефон','tel')}</div>
+    <div class="grid2">${f('o_start','Начало договора','date',TODAY)}${f('o_end','Конец договора','date',addMonths(TODAY,11))}</div>
+    <div class="f"><label for="o_el">Счётчик электричества</label><select id="o_el" name="o_el">${Object.entries(EL_MODES).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></div>
+    <div class="grid2">${f('o_day','День оплаты','number','1','min="1" max="31"')}${f('o_dep','Залог, ₽','number','0','min="0"')}</div>
+    ${S.role==='agent'?`<div class="grid2">${f('o_owner','Собственник')}${f('o_com','Комиссия, %','number','10','min="0" max="100"')}</div>`:''}`;
+  if(s==='addMeter'||s==='addMeterTenant'){const l=o.meters[o.meters.length-1]||{};h=`<h3>Показания счётчиков</h3>
+    ${f('m_date','Дата','date',TODAY,'required')}
+    ${meterFields(o,'m_',l)}
+    <div class="f"><label for="m_photo">Фото счётчиков${s==='addMeterTenant'?' (обязательно)':''}</label>
+      <label class="photo-drop" for="m_photo">${ui.photo?`<img src="${ui.photo}" alt="Фото счётчика">`:'<span>Сфотографировать или выбрать фото</span>'}</label>
+      <input id="m_photo" type="file" accept="image/*" capture="environment" class="sr"></div>
+    <p class="note">Подставлены прошлые значения, новые не могут быть меньше. ${s==='addMeterTenant'?'Арендодатель сверит цифры с фото.':'Можно снять все счётчики одним кадром.'}</p>`}
+  if(s==='viewMeter'){const r=o.meters.find(x=>x.id===ui.meterId);h=`<h3>Показания от ${fdateY(r.date)}</h3>
+    ${r.photo?`<img class="photo-big" src="${r.photo}" alt="Фото счётчиков">`:'<div class="alert info">Фото не приложено.</div>'}
+    <p class="note">${r.by==='tenant'?'Передал арендатор. ':''}Сверьте цифры с фото. Если есть ошибка, исправьте и сохраните.</p>
+    ${meterFields(o,'v_',r)}`}
+  if(s==='tariffs')h=`<h3>Тарифы</h3>${f('t_cold',mi('cold','cold')+'Холодная вода, ₽ за м³','number',o.tariffs.cold,'step="0.01" min="0"')}${f('t_hot',mi('hot','hot')+'Горячая вода, ₽ за м³','number',o.tariffs.hot,'step="0.01" min="0"')}${elKeys(o).map(([k,l])=>f('t_'+k,mi(...MI[k])+(k==='el'?'Электричество':'Свет, '+l)+', ₽ за кВт·ч','number',o.tariffs[k]??0,'step="0.01" min="0"')).join('')}
+    <div class="f"><label for="t_mode">Счётчик электричества</label><select id="t_mode" name="t_mode">${Object.entries(EL_MODES).map(([k,l])=>`<option value="${k}" ${k===(o.elMode||'single')?'selected':''}>${l}</option>`).join('')}</select></div>
+    <p class="note">Смена типа счётчика действует для новых показаний. Расчёт заработает, когда будут два показания нового типа.</p>`;
+  if(s==='addExp')h=`<h3>Новый расход</h3>
+    <div class="f"><label for="e_cat">Категория</label><select id="e_cat" name="e_cat">${['Ремонт','Мебель и техника','Коммуналка','Уборка','Налоги','Ипотека','Другое'].map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="grid2">${f('e_amount','Сумма, ₽','number','','min="1" required')}${f('e_date','Дата','date',TODAY,'required')}</div>${f('e_note','Комментарий')}`;
+  if(s==='addBook')h=`<h3>Новая бронь</h3>${f('b_guest','Гость','text','','required')}
+    <div class="grid2">${f('b_from','Заезд','date',TODAY,'required')}${f('b_to','Выезд','date',addDays(TODAY,2),'required')}</div>
+    ${f('b_sum','Сумма, ₽','number','','min="0" placeholder="По умолчанию: сутки × цена"')}
+    <label class="check"><input type="checkbox" id="b_paid" name="b_paid"> Оплачено</label>`;
+  if(s==='repair')h=`<h3>Сообщить о поломке</h3>${f('r_text','Что случилось','text','','required placeholder="Например, течёт кран на кухне"')}<p class="note">В рабочей версии можно будет приложить фото, а арендодатель увидит заявку и её статус.</p>`;
+  if(s==='invite')return `<div class="scrim" data-act="close"><div class="sheet" role="dialog" aria-label="Приглашение" data-stop>
+    <h3>Пригласить арендатора</h3><p>В рабочей версии здесь будет ссылка: арендатор открывает её, ставит приложение и сразу попадает в свою квартиру, без регистрации.</p>
+    <p class="note">Посмотреть его экран можно кнопкой «Как видит арендатор».</p><button class="btn wide" data-act="close">Понятно</button></div></div>`;
+  return `<div class="scrim" data-act="close"><form class="sheet" role="dialog" data-form="${s}" data-stop novalidate>${h}
+    ${ui.err?`<div class="err">${esc(ui.err)}</div>`:''}
+    <div class="grid2"><button type="button" class="btn ghost" data-act="close">Отмена</button><button class="btn" type="submit">${s==='viewMeter'?'Подтвердить':s==='addMeterTenant'?'Отправить':'Сохранить'}</button></div></form></div>`;
+}
+
+function submit(name,fd){
+  const g=k=>fd.get(k);const n=k=>Number(g(k));const o=S.objects.find(x=>x.id===ui.objId);
+  if(name==='addObj'){
+    if(!g('o_name')||!n('o_rent')||!n('o_area'))return'Заполните адрес, площадь и плату.';
+    if(S.objects.length>=LIMIT[S.role])return'На тарифе «Частник» до 5 объектов. Для большего числа нужен тариф агента.';
+    const type=g('o_type');
+    const no={id:uid(),type,name:g('o_name'),area:n('o_area'),rooms:n('o_rooms')||1,rent:n('o_rent'),payDay:Math.min(31,Math.max(1,n('o_day')||1)),
+      tenant:{name:type==='long'?g('o_tn')||'':'',phone:type==='long'?g('o_tp')||'':''},
+      contract:type==='long'?{start:g('o_start'),end:g('o_end'),deposit:n('o_dep')||0}:{start:'',end:'',deposit:0},
+      payments:{},meters:[],tariffs:{cold:0,hot:0,el:0,el1:0,el2:0,el3:0},elMode:g('o_el')||'single',expenses:[],bookings:[],owner:g('o_owner')||'',commission:n('o_com')||0};
+    if(type==='long'&&no.contract.end<no.contract.start)return'Конец договора раньше начала.';
+    S.objects.push(no);ui.objId=no.id;ui.view='object';ui.tab=null;toast('Объект добавлен');return;
+  }
+  if(name==='addMeter'||name==='addMeterTenant'){
+    const rv=readForm(o,g,'m_');if(!rv)return'Заполните все показания.';
+    const r={date:g('m_date'),...rv};
+    const l=o.meters[o.meters.length-1];
+    if(l&&lessThan(o,r,l))return'Новые показания меньше прошлых. Проверьте цифры.';
+    if(name==='addMeterTenant'&&!ui.photo)return'Приложите фото счётчиков, чтобы арендодатель мог сверить цифры.';
+    r.id=uid();if(ui.photo)r.photo=ui.photo;
+    if(name==='addMeterTenant'){r.by='tenant';r.status='check'}else r.status='ok';
+    ui.photo=null;
+    o.meters.push(r);o.meters.sort((a,b)=>a.date<b.date?-1:1);toast(name==='addMeterTenant'?'Показания отправлены арендодателю':'Показания сохранены');return;
+  }
+  if(name==='viewMeter'){
+    const i=o.meters.findIndex(x=>x.id===ui.meterId);const r=o.meters[i];
+    const v=readForm(o,g,'v_');if(!v)return'Заполните все показания.';
+    const p=o.meters[i-1],nx=o.meters[i+1];
+    if(p&&lessThan(o,v,p))return'Показания меньше предыдущих ('+fdate(p.date)+'). Проверьте цифры.';
+    if(nx&&lessThan(o,nx,v))return'Показания больше следующих ('+fdate(nx.date)+'). Проверьте цифры.';
+    const changed=Object.keys(v).some(k=>v[k]!==r[k]);
+    Object.assign(r,v,{status:'ok'});if(changed)r.fixed=true;
+    toast(changed?'Показания исправлены и приняты':'Показания приняты');return;
+  }
+  if(name==='tariffs'){const t={...o.tariffs,cold:n('t_cold')||0,hot:n('t_hot')||0};elKeys(o).forEach(([k])=>t[k]=n('t_'+k)||0);o.tariffs=t;o.elMode=g('t_mode')||'single';toast('Тарифы сохранены');return}
+  if(name==='addExp'){if(!n('e_amount'))return'Укажите сумму.';o.expenses.push({id:uid(),date:g('e_date'),cat:g('e_cat'),amount:n('e_amount'),note:g('e_note')||''});toast('Расход добавлен');return}
+  if(name==='addBook'){
+    const b={id:uid(),guest:g('b_guest'),from:g('b_from'),to:g('b_to'),paid:!!g('b_paid')};
+    if(!b.guest)return'Укажите гостя.';
+    if(!b.from||!b.to||b.to<=b.from)return'Выезд должен быть позже заезда.';
+    const clash=(o.bookings||[]).find(x=>b.from<x.to&&b.to>x.from);
+    if(clash)return'Даты пересекаются с бронью: '+clash.guest+', '+fdate(clash.from)+' — '+fdate(clash.to)+'.';
+    b.sum=n('b_sum')||daysBetween(b.from,b.to)*o.rent;(o.bookings=o.bookings||[]).push(b);toast('Бронь добавлена');return;
+  }
+  if(name==='repair'){if(!g('r_text'))return'Опишите поломку.';toast('Заявка отправлена арендодателю');return}
+}
+
+/* ---------- отрисовка и события ---------- */
+let toastT;
+function toast(t){clearTimeout(toastT);let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;el.hidden=false;toastT=setTimeout(()=>{el.hidden=true},2400)}
+const root=document.getElementById('root');
+function render(){
+  if(!S.role){root.innerHTML=vOnboard();return}
+  const v={home:vHome,objects:vObjects,object:vObject,tenant:vTenant,finance:vFinance,profile:vProfile}[ui.view]||vHome;
+  root.innerHTML=`<div class="app">${v()}</div>${nav()}${ui.sheet?sheet():''}`;
+  if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus()}
+}
+root.addEventListener('click',e=>{
+  const t=e.target.closest('[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-pay],[data-confirm],[data-bpay],[data-claim],[data-theme-set]');
+  if(!t){return}
+  if(t.dataset.act==='close'&&t.classList.contains('scrim')&&e.target!==t)return;
+  const d=t.dataset;const o=S.objects.find(x=>x.id===ui.objId);
+  if(d.themeSet){THEME=d.themeSet;try{localStorage.setItem(TKEY,THEME)}catch(e){}applyTheme()}
+  else if(d.meter){ui.meterId=d.meter;ui.sheet='viewMeter';ui.err=''}
+  else if(d.role){S.role=d.role;ui.view='home';save()}
+  else if(d.nav){ui.view=d.nav;ui.sheet=null;window.scrollTo(0,0)}
+  else if(d.open){ui.objId=d.open;ui.view='object';ui.tab=d.tab||null;window.scrollTo(0,0)}
+  else if(d.filter){ui.filter=d.filter}
+  else if(d.tabSel){ui.tab=d.tabSel}
+  else if(d.pay){const k=d.pay;o.payments[k]={amount:o.rent,date:TODAY};save();toast('Оплата отмечена')}
+  else if(d.confirm){const r=o.payments[d.confirm];o.payments[d.confirm]={amount:o.rent,date:r.claimDate||TODAY};save();toast('Оплата подтверждена')}
+  else if(d.bpay){const b=o.bookings.find(x=>x.id===d.bpay);b.paid=true;save();toast('Бронь оплачена')}
+  else if(d.claim){o.payments[d.claim]={...(o.payments[d.claim]||{amount:0}),claimed:true,claimDate:TODAY};save();toast('Отметка отправлена арендодателю')}
+  else if(d.act){
+    const a=d.act;
+    if(a==='back'){if(ui.view==='tenant')ui.view='object';else{ui.view='objects'}}
+    else if(a==='close'){ui.sheet=null;ui.err='';ui.photo=null}
+    else if(a==='tenantView'){ui.view='tenant';window.scrollTo(0,0)}
+    else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
+    else if(a==='reset'){const pr=S.role;S=sample();S.role=pr;ui.view='home';save();toast('Примеры восстановлены')}
+    else {ui.sheet=a;ui.err='';ui.photo=null}
+  }
+  render();
+});
+root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open],[data-meter]')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&ui.sheet){ui.sheet=null;ui.err='';render()}});
+root.addEventListener('submit',e=>{
+  e.preventDefault();const form=e.target;const err=submit(form.dataset.form,new FormData(form));
+  if(err){ui.err=err;render();return}
+  ui.sheet=null;ui.err='';if(!save())toast('Не хватило места в браузере: удалите старые фото или верните примеры');render();
+});
+root.addEventListener('input',e=>{const pre=e.target.dataset&&e.target.dataset.zone;if(!pre)return;
+  const ins=[...root.querySelectorAll('[data-zone="'+pre+'"]')];const vals=ins.map(i=>i.value===''?NaN:Number(i.value));
+  const out=root.querySelector('[data-total="'+pre+'"]');if(out)out.textContent='Всего: '+(vals.some(isNaN)?'—':+vals.reduce((a,b)=>a+b,0).toFixed(2))});
+root.addEventListener('change',async e=>{
+  if(e.target.id!=='m_photo'||!e.target.files[0])return;
+  const drop=root.querySelector('.photo-drop');drop.innerHTML='<span>Обрабатываем фото…</span>';
+  try{ui.photo=await shrink(e.target.files[0]);drop.innerHTML='<img src="'+ui.photo+'" alt="Фото счётчика">'}
+  catch(err){ui.photo=null;drop.innerHTML='<span>Не удалось открыть файл. Выберите фото в формате JPG или PNG.</span>'}
+});
+render();
+})();
+</script>
+</body>
+</html>
