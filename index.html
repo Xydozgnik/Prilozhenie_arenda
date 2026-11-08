@@ -55,6 +55,10 @@ button,input,select{font:inherit;color:inherit}
 /* Зерно: едва заметный шум поверх всего экрана в обеих темах */
 body::after{content:"";position:fixed;inset:0;z-index:100;pointer-events:none;opacity:var(--grain);mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* Строки вкладок и фильтров листаются пальцем, но без видимой полосы прокрутки:
+   иначе подсветка, пружиня у крайнего пункта, на миг вызывает полосу */
+.tabs,.chips{scrollbar-width:none}
+.tabs::-webkit-scrollbar,.chips::-webkit-scrollbar{display:none}
 /* clip, а не hidden: блоки, въезжающие сбоку, не дают горизонтальной прокрутки, а липкая шапка продолжает работать */
 html,body{overflow-x:clip}
 .app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
@@ -581,9 +585,8 @@ function vFinance(){
   return top('Финансы')+`<main>
     <div class="sum3"><div class="card wide hero"><div><div class="label">Чистый доход за ${y}</div><div class="big num">${rub(tot.net)}</div></div>${spark(Array.from({length:T.getMonth()+1},(_,i)=>monthInc(y+'-'+pad(i+1))))}<div class="note num">доход ${rub(tot.inc)} · расходы ${rub(tot.exp)}</div></div></div>
     <h2>По объектам</h2>
-    <div class="card scrollx"><table class="fin"><tr><th>Объект</th><th>Доход</th><th>Расходы</th>${ag?'<th>Комиссия</th>':''}<th>Итог</th></tr>
-      ${rows.map(r=>`<tr><td>${esc(r.o.name.split(',').slice(1,3).join(',').trim())}</td><td>${rub(r.inc)}</td><td>${rub(r.exp)}</td>${ag?`<td>${rub(r.com)}</td>`:''}<td><b>${rub(r.net)}</b></td></tr>`).join('')}
-    </table></div>
+    <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(r.o.name.split(',').slice(1,3).join(',').trim()||r.o.name)}</div>
+      <div class="s num">доход ${rub(r.inc)} · расходы ${rub(r.exp)}${ag?' · комиссия '+rub(r.com):''}</div></div><b class="num" style="white-space:nowrap">${rub(r.net)}</b></div>`).join('')}</div>
     <p class="note">${ag?'Комиссия агента считается от полученного дохода по каждому объекту. Отчёт собственнику появится в следующей версии.':'Доход учитывает полученные оплаты; посуточные брони считаются по дате заезда.'}</p>
   </main>`;
 }
