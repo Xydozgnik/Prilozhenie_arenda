@@ -287,13 +287,13 @@ function sample(){
   const cur=mkey(TODAY);
   const m1=TODAY.slice(0,8)+'01';
   const o1={id:uid(),type:'long',name:'Москва, ул. Профсоюзная, 64, кв. 112',area:42,rooms:1,rent:45000,payDay:1,
-    tenant:{name:'Анна Смирнова',phone:'+7 916 000-00-00'},contract:{start:addMonths(m1,-6),end:addDays(TODAY,24),deposit:45000},
+    tenant:{name:'Смирнова Анна Сергеевна',phone:'+7 916 000-00-00',birth:'1996-08-03',passport:'45 18 000000',issued:'ГУ МВД России по г. Москве, 20.09.2018',reg:'г. Тула, ул. Советская, д. 5, кв. 12'},contract:{start:addMonths(m1,-6),end:addDays(TODAY,24),deposit:45000,city:'Москва',floor:6},
     payments:{},meters:[],tariffs:{cold:52.5,hot:271.4,el:7.8,el1:8.9,el2:3.6,el3:7.1},elMode:'t2',expenses:[],owner:'',commission:0};
   for(let i=-6;i<=0;i++){const k=mkey(addMonths(m1,i));o1.payments[k]={amount:45000,date:addMonths(m1,i)}}
   o1.meters=[{date:addMonths(TODAY.slice(0,8)+'20',-2),cold:412,hot:180,el1:11240,el2:3970},{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:419,hot:183,el1:11371,el2:4027}];
   o1.expenses=[{id:uid(),date:addMonths(m1,-3),cat:'Ремонт',amount:6800,note:'Замена смесителя'},{id:uid(),date:addMonths(m1,-1),cat:'Коммуналка',amount:5400,note:'Квитанция за месяц'}];
   const o2={id:uid(),type:'long',kind:'room',name:'Химки, ул. Лавочкина, 9, кв. 31, комната',area:36,rooms:1,rent:32000,payDay:3,
-    tenant:{name:'Игорь Петров',phone:'+7 925 000-00-00'},contract:{start:addMonths(m1,-10),end:addMonths(m1,8),deposit:32000},
+    tenant:{name:'Петров Игорь Николаевич',phone:'+7 925 000-00-00'},contract:{start:addMonths(m1,-10),end:addMonths(m1,8),deposit:32000,city:'Химки',floor:3},
     payments:{},meters:[],tariffs:{cold:52.5,hot:271.4,el:7.8},expenses:[],owner:'',commission:0};
   for(let i=-10;i<=-1;i++){const k=mkey(addMonths(m1,i));o2.payments[k]={amount:32000,date:addMonths(m1,i+0)}}
   o2.payments[mkey(addMonths(m1,-1))]={amount:20000,date:addMonths(m1,-1)};
@@ -308,14 +308,16 @@ function sample(){
       {id:uid(),guest:'Елена',from:addDays(TODAY,12),to:addDays(TODAY,14),sum:8400,paid:false}],
     expenses:[{id:uid(),date:addDays(TODAY,-6),cat:'Уборка',amount:1500,note:'После выезда'}],owner:'',commission:0};
   const o4={id:uid(),type:'long',kind:'house',name:'Мытищи, д. Жостово, ул. Садовая, 12',area:96,rooms:3,rent:85000,payDay:10,
-    tenant:{name:'Ольга Ковалёва',phone:'+7 903 000-00-00'},contract:{start:addMonths(m1,-3),end:addMonths(m1,9),deposit:85000},
+    tenant:{name:'Ковалёва Ольга Андреевна',phone:'+7 903 000-00-00',birth:'1990-02-14'},contract:{start:addMonths(m1,-3),end:addMonths(m1,9),deposit:85000,city:'Мытищи',util:{el:'tenant',water:'tenant',heat:'landlord'},keys:2,keysIntercom:0},
     payments:{},meters:[{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:96,hot:41,el:15420}],tariffs:{cold:52.5,hot:271.4,el:6.4},elMode:'single',
     expenses:[{id:uid(),date:addMonths(m1,-1),cat:'Ремонт',amount:4500,note:'Чистка дымохода'}],owner:'',commission:0};
   for(let i=-3;i<=-1;i++){const k=mkey(addMonths(m1,i));o4.payments[k]={amount:85000,date:addDays(addMonths(m1,i),9)}}
   o1.kind='flat';o3.kind='flat';
-  return {v:1,role:null,objects:[o1,o2,o4,o3]};
+  /* данные наймодателя из примера — выдуманные */
+  const me={landlord:{name:'Орлов Максим Викторович',birth:'1985-04-12',phone:'+7 916 111-22-33',passport:'45 10 000000',issued:'ГУ МВД России по г. Москве, 12.05.2015',reg:'г. Москва, ул. Лесная, д. 1, кв. 1',account:'40817 810 0 0000 0000000',card:'2200 0000 0000 0000',bank:'ПАО Сбербанк'},city:'Москва'};
+  return fixIds({v:1,role:null,me,objects:[o1,o2,o4,o3]});
 }
-function fixIds(d){d.objects.forEach(o=>(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()}));return d}
+function fixIds(d){d.objects.forEach(o=>{(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()});ensureContract(o,d.me)});return d}
 function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.v===1)return fixIds(d)}}catch(e){}return fixIds(sample())}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}}
 let S=load();
@@ -456,6 +458,266 @@ const catIco=c=>{const[n,t]=CAT[c]||CAT['Другое'];return ico(n,t)};
 function odo(v,u){const n=Number(v)||0;const fd=u==='м³'?2:1;const[a,b]=n.toFixed(fd).split('.');
   return `<span class="odo" role="img" aria-label="${n}">${(a.padStart(5,'0')+b).split('').map((c,i)=>`<i style="--d:${i}"${i>=Math.max(5,a.length)?' class="fr"':''}>${c}</i>`).join('')}</span>`}
 
+/* ---------- договор найма: данные, текст и выгрузка в Word ----------
+   Все поля договора живут в карточке объекта: изменил в форме — сразу меняются
+   вкладки, график платежей и текст договора. Word-файл собирается прямо в браузере. */
+const UTIL_WHO={tenant:'Наниматель',landlord:'Наймодатель'};
+function ensureContract(o,me){if(o.type!=='long')return o;o.contract=o.contract||{start:'',end:'',deposit:0};const c=o.contract;
+  c.util=c.util||{el:'tenant',water:'tenant',heat:'tenant'};if(c.keys==null)c.keys=1;if(c.keysIntercom==null)c.keysIntercom=1;
+  if(c.city==null)c.city=(me&&me.city)||'';if(c.sign==null)c.sign=c.start||'';
+  o.tenant=o.tenant||{name:'',phone:''};if(!o.landlord){o.landlord={...((me&&me.landlord)||{})}}return o}
+/* [поле, подпись, тип, нужно для договора, во всю ширину] */
+const CF=[
+  ['Договор',[['contract.city','Город','text',1],['contract.sign','Дата договора','date',1]]],
+  ['Помещение',[['name','Адрес','text',1,1],['contract.floor','Этаж','number',0],['area','Площадь, м²','number',1],['rooms','Комнат','number',1]]],
+  ['Срок и деньги',[['contract.start','Начало найма','date',1],['contract.end','Конец найма','date',1],['rent','Плата в месяц, ₽','number',1],['payDay','Оплата до … числа','number',1],['contract.deposit','Залог, ₽','number',1]]],
+  ['Наймодатель',[['landlord.name','ФИО полностью','text',1,1],['landlord.birth','Дата рождения','date',1],['landlord.phone','Телефон','tel',1],['landlord.passport','Паспорт (серия, номер)','text',1],['landlord.issued','Кем и когда выдан','text',1,1],['landlord.reg','Адрес регистрации','text',0,1],['landlord.account','Счёт №','text',0],['landlord.card','Карта №','text',0],['landlord.bank','Банк','text',0,1]]],
+  ['Наниматель',[['tenant.name','ФИО полностью','text',1,1],['tenant.birth','Дата рождения','date',1],['tenant.phone','Телефон','tel',1],['tenant.passport','Паспорт (серия, номер)','text',1],['tenant.issued','Кем и когда выдан','text',1,1],['tenant.reg','Адрес регистрации','text',1,1],['tenant.cohab','Кто ещё будет жить (необязательно)','text',0,1]]]];
+const gp=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+const sp=(o,p,v)=>{const ks=p.split('.');const last=ks.pop();ks.reduce((a,k)=>a[k]=a[k]||{},o)[last]=v};
+const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=='';
+const GEN={'Наймодатель':' наймодателя','Наниматель':' нанимателя'};
+function contractMissing(o){const m=[];CF.forEach(([g,fs])=>fs.forEach(([p,l,t,req])=>{if(req&&!filled(gp(o,p)))m.push(l.toLowerCase().replace(' полностью','')+(GEN[g]||''))}));return m}
+const CF_REQ=CF.reduce((a,[,fs])=>a+fs.filter(x=>x[3]).length,0);
+function contractForm(o){const fid=p=>'c__'+p.replace(/\./g,'__');
+  const groups=CF.map(([g,fs])=>{let h='',pair=[];const flush=()=>{if(pair.length){h+=pair.length===2?`<div class="grid2">${pair.join('')}</div>`:pair[0];pair=[]}};
+    fs.forEach(([p,l,t,req,wide])=>{const v=gp(o,p);const el=f(fid(p),l,t,v??'',t==='number'?'min="0" step="any"':'');if(wide){flush();h+=el}else{pair.push(el);if(pair.length===2)flush()}});flush();
+    return `<fieldset class="zones"><legend>${g}</legend>${h}</fieldset>`}).join('');
+  const c=o.contract,sel=(k,l)=>`<div class="f"><label for="c_u_${k}">${l}</label><select id="c_u_${k}" name="c_u_${k}">${Object.entries(UTIL_WHO).map(([v,t])=>`<option value="${v}" ${c.util[k]===v?'selected':''}>${t}</option>`).join('')}</select></div>`;
+  return `<h3>Данные договора</h3><p class="note">Всё, что здесь заполнено, сразу попадает в договор и карточку. Пустые поля в договоре останутся линиями — их можно дописать от руки.</p>${groups}
+    <fieldset class="zones"><legend>Коммуналка и ключи</legend><div class="grid3">${sel('el',mi('el','el')+'Свет платит')}${sel('water',mi('cold','cold')+'Воду платит')}${sel('heat',mi('hot','hot')+'Отопление платит')}</div>
+    <div class="grid2">${f('c_keys','Ключей от двери','number',c.keys,'min="0"')}${f('c_keysI','Ключей от домофона','number',c.keysIntercom,'min="0"')}</div></fieldset>`}
+function contractSubmit(o,g){const ps=[];CF.forEach(([,fs])=>fs.forEach(x=>ps.push(x)));
+  const val={};for(const[p,l,t]of ps){const raw=(g('c__'+p.replace(/\./g,'__'))??'').trim();val[p]=t==='number'?(raw===''?'':Number(raw)):raw}
+  if(!val.name)return'Укажите адрес помещения.';if(!(val.rent>0))return'Укажите плату в месяц.';
+  if(val['contract.start']&&val['contract.end']&&val['contract.end']<val['contract.start'])return'Конец найма раньше начала.';
+  for(const p in val){let v=val[p];if(p==='payDay')v=Math.min(31,Math.max(1,v||1));if((p==='area'||p==='rooms'||p==='contract.deposit')&&v==='')v=0;sp(o,p,v)}
+  o.contract.util={el:g('c_u_el')||'tenant',water:g('c_u_water')||'tenant',heat:g('c_u_heat')||'tenant'};
+  o.contract.keys=Number(g('c_keys'))||0;o.contract.keysIntercom=Number(g('c_keysI'))||0;
+  if(S.role==='agent'&&o.landlord.name)o.owner=o.landlord.name;
+  S.me={landlord:{...o.landlord},city:o.contract.city};toast('Договор обновлён');}
+
+/* --- слова и даты для текста договора --- */
+const plural=(n,f)=>{const a=n%100,b=n%10;return a>10&&a<20?f[2]:b===1?f[0]:b>=2&&b<=4?f[1]:f[2]};
+function words(n){n=Math.floor(Math.abs(n));if(!n)return'ноль';
+  const U=[['','один','два','три','четыре','пять','шесть','семь','восемь','девять'],['','одна','две','три','четыре','пять','шесть','семь','восемь','девять']];
+  const T=['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const D=['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
+  const H=['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
+  const SC=[null,[['тысяча','тысячи','тысяч'],1],[['миллион','миллиона','миллионов'],0]];
+  const tri=(x,g)=>{const r=x%100;return[H[Math.floor(x/100)],...(r>=10&&r<20?[T[r-10]]:[D[Math.floor(r/10)],U[g][r%10]])].filter(Boolean).join(' ')};
+  const out=[];let i=0;while(n>0&&i<3){const x=n%1000;if(x)out.unshift(tri(x,i?SC[i][1]:0)+(i?' '+plural(x,SC[i][0]):''));n=Math.floor(n/1000);i++}return out.join(' ')}
+const rubW=n=>{n=Math.round(Number(n)||0);return n.toLocaleString('ru-RU')+' ('+words(n)+') '+plural(n,['рубль','рубля','рублей'])};
+const MON_G=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const dLong=s=>{if(!s)return'«___» ____________ 20___ г.';const d=parse(s);return`«${pad(d.getDate())}» ${MON_G[d.getMonth()]} ${d.getFullYear()} г.`};
+const dShort=s=>{if(!s)return'___.___.______';const d=parse(s);return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()};
+/* род по отчеству: -вич/-ич — мужчина, -вна/-чна — женщина */
+const sexOf=n=>{const w=String(n||'').trim().split(/\s+/);return w.some(x=>/(вич|ич)$/i.test(x))?'m':w.some(x=>/(вна|чна)$/i.test(x))?'f':''};
+const named=n=>({m:'именуемый',f:'именуемая'})[sexOf(n)]||'именуемый(-ая)';
+const citizen=n=>({m:'Гражданин',f:'Гражданка'})[sexOf(n)]||'Гражданин(-ка)';
+const shortName=n=>{const w=String(n||'').trim().split(/\s+/).filter(Boolean);return w.length?w[0]+' '+w.slice(1).map(x=>x[0]+'.').join(' '):'_'.repeat(18)};
+
+/* --- Word: разметка WordprocessingML --- */
+const xe=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const RUN=(t,o={})=>`<w:r>${o.b||o.i||o.sz?`<w:rPr>${o.b?'<w:b/>':''}${o.i?'<w:i/>':''}${o.sz?`<w:sz w:val="${o.sz}"/><w:szCs w:val="${o.sz}"/>`:''}</w:rPr>`:''}<w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
+function PAR(runs,o={}){const p=[];if(o.keep)p.push('<w:keepNext/>');if(o.pb)p.push('<w:pageBreakBefore/>');
+  p.push(`<w:spacing w:before="${o.before||0}" w:after="${o.after??80}"/>`);if(o.left)p.push(`<w:ind w:left="${o.left}" w:hanging="${o.hang||0}"/>`);else if(o.first)p.push(`<w:ind w:firstLine="${o.first}"/>`);
+  p.push(`<w:jc w:val="${o.jc||'both'}"/>`);return`<w:p><w:pPr>${p.join('')}</w:pPr>${(Array.isArray(runs)?runs:[RUN(runs,o)]).join('')}</w:p>`}
+function TBL(rows,widths,border,head){const bd=border?'<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(s=>`<w:${s} w:val="single" w:sz="4" w:space="0" w:color="000000"/>`).join('')+'</w:tblBorders>':'';
+  return`<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a,b)=>a+b,0)}" w:type="dxa"/>${bd}<w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`+
+    rows.map((r,ri)=>`<w:tr>${ri===0&&head?'<w:trPr><w:tblHeader/></w:trPr>':''}${r.map((c,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/></w:tcPr>${[].concat(c).join('')||'<w:p/>'}</w:tc>`).join('')}</w:tr>`).join('')+'</w:tbl>'}
+
+/* --- текст договора (единый источник: и для скачивания, и для шаблона) --- */
+function contractBody(o){
+  const c=o.contract||{},L=o.landlord||{},N=o.tenant||{},k=kindOf(o),u=c.util||{el:'tenant',water:'tenant',heat:'tenant'};
+  const B=(v,n=20)=>filled(v)?String(v).trim():'_'.repeat(n);
+  const money=v=>filled(v)&&Number(v)>0?rubW(v):'_'.repeat(12)+' (' +'_'.repeat(30)+') рублей';
+  const subj=k==='house'?'жилой дом':k==='room'?'комнату в квартире':'квартиру';
+  const floor=k!=='house'&&filled(c.floor)?`, расположенную на ${c.floor} этаже жилого дома,`:'';
+  const kindTitle=k==='house'?'(жилого дома)':k==='room'?'(комнаты)':'(квартиры)';
+  const actSubj=k==='house'?'жилой дом':k==='room'?'комнату в квартире':(Number(o.rooms)>0?o.rooms+'-комнатную квартиру':'квартиру');
+  const ms=(o.meters||[]).slice().sort((a,b)=>a.date<b.date?-1:1);const r=(c.start&&ms.filter(m=>m.date<=c.start).pop())||ms[0]||{};
+  const ek=elKeys(o);const elTxt=ek.length===1?`${B(r.el,10)} кВт·ч`:ek.map(([kk,l])=>`${l.split(' ')[0]} — ${B(r[kk],8)}`).join('; ')+' кВт·ч';
+  const waterTxt=`холодная вода — ${B(r.cold,8)} куб. м, горячая вода — ${B(r.hot,8)} куб. м`;
+  const out=[];let sec=0,cl=0;
+  const H=t=>{sec++;cl=0;out.push(PAR([RUN(sec+'. '+t,{b:1})],{jc:'center',keep:1,before:200,after:100}))};
+  const C=(t,o2={})=>{cl++;out.push(PAR([RUN(sec+'.'+cl+'. ',{b:1}),RUN(t)],{first:567,...o2}));return sec+'.'+cl};
+  const S2=(n,t)=>out.push(PAR([RUN(n+' '),RUN(t)],{first:567}));
+  const LI=t=>out.push(PAR([RUN('— '+t)],{left:851,hang:284}));
+  const SUB=(t,b)=>out.push(PAR([RUN(t,{b:b?1:0})],{first:567,keep:1}));
+
+  out.push(PAR([RUN('ДОГОВОР НАЙМА',{b:1,sz:28})],{jc:'center',after:0}));
+  out.push(PAR([RUN('жилого помещения '+kindTitle,{b:1})],{jc:'center',after:200}));
+  out.push(TBL([[PAR('г. '+B(c.city,16),{jc:'left',after:0}),PAR(dLong(c.sign),{jc:'right',after:0})]],[4819,4819],0));
+  out.push(PAR('',{after:120}));
+  out.push(PAR([RUN(citizen(L.name)+' РФ '),RUN(B(L.name,36),{b:1}),RUN(`, ${named(L.name)} в дальнейшем «Наймодатель», с одной стороны, и ${citizen(N.name).toLowerCase()} РФ `),RUN(B(N.name,36),{b:1}),RUN(`, ${named(N.name)} в дальнейшем «Наниматель», с другой стороны, вместе именуемые «Стороны», заключили настоящий договор (далее — Договор) о нижеследующем:`)],{first:567}));
+
+  H('Предмет договора');
+  C(`Наймодатель предоставляет Нанимателю за плату во временное владение и пользование (наём) жилое помещение — ${subj}${floor} по адресу: ${B(o.name,40)}, общей площадью ${B(o.area,6)} кв. м${k==='room'?'':', количество комнат: '+B(o.rooms,3)} (далее — Помещение).`);
+  C(filled(N.cohab)?`Помещение предоставляется для проживания Нанимателя и следующих граждан: ${N.cohab}.`:'Помещение предоставляется для проживания Нанимателя.');
+  C('Вселение граждан, не указанных в п. 1.2 Договора, для их постоянного или временного проживания в Помещении не допускается.');
+  C('Наймодатель гарантирует, что:');
+  S2('1.4.1.','Помещение принадлежит Наймодателю на праве собственности, о чём в Едином государственном реестре недвижимости сделана запись о государственной регистрации права;');
+  S2('1.4.2.','на момент заключения Договора Помещение не продано, не подарено, не заложено, не обременено другими договорами найма на срок найма по Договору, в споре или под арестом не состоит, и к нему нет претензий со стороны третьих лиц.');
+  C('При передаче Помещения Стороны подписывают Передаточный акт (Приложение № 1 к Договору), в котором указываются находящиеся в Помещении имущество и оборудование, показания приборов учёта и количество переданных ключей.');
+
+  H('Плата за Помещение. Порядок расчётов');
+  C(`Плата за Помещение составляет ${money(o.rent)} в месяц.`);
+  C('В течение срока действия Договора Наймодатель не вправе в одностороннем порядке изменить размер платы, установленный в п. 2.1 Договора, за исключением случаев, указанных в п. 2.3 Договора.');
+  C('Наймодатель вправе потребовать изменения размера платы за Помещение и размера обеспечительного платежа в следующих случаях:');
+  LI('при изменении состава или количества граждан, проживающих с Нанимателем и указанных в п. 1.2 Договора, без предварительного согласования с Наймодателем;');
+  LI('при нарушении Нанимателем или проживающими с ним лицами обязанностей, установленных в пп. 4.3.9 и 4.3.10 Договора.');
+  C(`Плата за Помещение вносится Нанимателем ежемесячно не позднее ${filled(o.payDay)?o.payDay:'____'}-го числа каждого месяца в рублях наличными денежными средствами или безналичным переводом по реквизитам, указанным в разделе 9 Договора. Нарушение срока внесения платы не допускается.`);
+  C('Услуги интернет-провайдера в плату за Помещение не включены и оплачиваются Нанимателем отдельно на основании квитанций или выставленного счёта.');
+  C('Коммунальные платежи в плату за Помещение не включены и оплачиваются на следующих условиях:');
+  S2('2.6.1.',`Потреблённую электроэнергию оплачивает ${UTIL_WHO[u.el]}. Показания электросчётчика на дату передачи Помещения: ${elTxt}.`);
+  S2('2.6.2.',`Водоснабжение и водоотведение оплачивает ${UTIL_WHO[u.water]}. Показания приборов учёта воды на дату передачи Помещения: ${waterTxt}.`);
+  S2('2.6.3.',`Отопление оплачивает ${UTIL_WHO[u.heat]} на основании квитанций.`);
+  S2('2.6.4.','Все остальные жилищно-коммунальные услуги оплачивает Наймодатель.');
+  C('Показания приборов учёта электроэнергии и воды Наниматель передаёт Наймодателю ежемесячно с 15-го по 20-е число сообщением в мессенджере или через приложение.');
+  C('Платежи, не включённые в плату за Помещение, Наниматель вносит не позднее 2-го числа каждого месяца.');
+
+  H('Обеспечительный платёж');
+  C(`В качестве гарантии сохранности Помещения, находящегося в нём имущества и оборудования, а также соблюдения Нанимателем и проживающими с ним гражданами условий Договора Наниматель передаёт Наймодателю обеспечительный платёж в размере ${money(c.deposit)}.`);
+  C('Обеспечительный платёж вносится в день заключения Договора в рублях наличными денежными средствами или безналичным переводом по реквизитам, указанным в разделе 9 Договора.');
+  C('Если Наниматель не внёс обеспечительный платёж, Наймодатель вправе в одностороннем порядке расторгнуть Договор. Ранее внесённые Нанимателем суммы при этом не возвращаются.');
+  C('Обеспечительный платёж не может быть использован в качестве платы за Помещение без письменного согласия Наймодателя.');
+  C('Если Наниматель отказывается вносить плату за последний месяц найма, Наймодатель вправе в одностороннем порядке расторгнуть Договор. Обеспечительный платёж Нанимателю при этом не возвращается.');
+
+  H('Права и обязанности Сторон');
+  C('Наймодатель вправе:',{keep:1});
+  S2('4.1.1.','Один раз в месяц по предварительному согласованию с Нанимателем проверять состояние Помещения и соблюдение Нанимателем условий Договора.');
+  S2('4.1.2.','Находиться в Помещении без согласования с Нанимателем для устранения аварийных ситуаций и их последствий, возникших в отсутствие Нанимателя, чтобы избежать или уменьшить ущерб Помещению, находящемуся в нём имуществу и соседним жилым помещениям.');
+  C('Наймодатель обязан:',{keep:1});
+  S2('4.2.1.','Не позднее начала срока найма передать Нанимателю свободное Помещение в состоянии, пригодном для проживания.');
+  S2('4.2.2.','До истечения срока действия Договора не совершать с другими лицами сделок в отношении Помещения, которые могут повлечь его отчуждение, обременение или ухудшение его состояния.');
+  S2('4.2.3.','За свой счёт своевременно вносить все необходимые платежи за Помещение, кроме платежей, обязанность по оплате которых возложена на Нанимателя.');
+  C('Наниматель обязан:',{keep:1});
+  ['Соблюдать установленные законодательством РФ правила пользования жилым помещением и общим имуществом дома.',
+   'Использовать Помещение только для проживания.',
+   'Обеспечивать сохранность Помещения и поддерживать его в надлежащем состоянии.',
+   'Следить за исправностью электропроводки, систем водоснабжения и водоотведения, сантехники, плиты, стиральной машины и другого имущества и оборудования в Помещении. Если оборудование вышло из строя по вине Нанимателя, ремонт или замену Наниматель выполняет своими силами и за свой счёт.',
+   'Соблюдать установленные Договором сроки внесения платы за Помещение и иных платежей.',
+   'Не заключать договоры и не совершать сделки, которые влекут или могут повлечь обременение прав, предоставленных Нанимателю по Договору, в том числе их переход к другому лицу (залог, субаренда, поднаём).',
+   'Проводить переоборудование, переустройство, ремонт или другие значительные изменения в Помещении только с письменного разрешения Наймодателя. Значительными считаются изменения, преднамеренные или случайные, для устранения которых нужна замена элементов отделки. Неотделимые улучшения, сделанные без согласования с Наймодателем и не вызывающие у него претензий, переходят в собственность Наймодателя без возмещения их стоимости.',
+   'Не менять замки и личинки замков без письменного разрешения Наймодателя.',
+   'Не курить в Помещении.',
+   'Содержать в Помещении животных только с письменного разрешения Наймодателя. Наниматель несёт полную материальную ответственность за ущерб, причинённый детьми и животными Помещению, его отделке, имуществу и оборудованию.',
+   'По окончании срока найма вернуть Помещение Наймодателю по передаточному акту в том состоянии, в котором Наниматель его получил, с учётом естественного износа, со всеми неотделимыми улучшениями и исправными инженерными сетями, бытовыми приборами и техникой, освободив Помещение от личных вещей.'
+  ].forEach((t,i)=>S2('4.3.'+(i+1)+'.',t));
+
+  H('Ответственность Сторон');
+  C('В случаях, не предусмотренных Договором, за неисполнение или ненадлежащее исполнение обязательств Стороны несут ответственность в соответствии с законодательством Российской Федерации.');
+  C('Ответственность Нанимателя:',{keep:1});
+  S2('5.2.1.','Наниматель отвечает за нарушение условий Договора гражданами, проживающими с ним в Помещении.');
+  S2('5.2.2.','Наймодатель вправе удержать из обеспечительного платежа штраф в размере суммы обеспечительного платежа за следующие нарушения:');
+  LI('нарушение Нанимателем сроков внесения платы за Помещение и иных платежей;');
+  LI('нарушение Нанимателем и проживающими с ним гражданами правил пользования Помещением, использование Помещения не по назначению или ухудшение его состояния;');
+  LI('нарушение Нанимателем или проживающими с ним гражданами иных обязанностей, установленных в п. 4.3 Договора;');
+  LI('нарушение Нанимателем порядка досрочного расторжения Договора, установленного в п. 6.7 Договора.');
+  C('Ответственность Наймодателя:',{keep:1});
+  S2('5.3.1.','Если Наймодатель нарушил срок передачи Помещения Нанимателю, он уплачивает Нанимателю штраф в размере 1 % от месячной платы за Помещение за каждый день просрочки.');
+  C('Стороны освобождаются от ответственности за неисполнение обязательств по Договору, если оно вызвано обстоятельствами непреодолимой силы, которые Стороны не могли предвидеть и предотвратить: стихийными бедствиями, вооружёнными конфликтами, актами органов государственной власти, существенно затрудняющими или делающими невозможным исполнение Договора.');
+
+  H('Срок действия Договора, его изменение и прекращение');
+  C('Договор вступает в силу с момента подписания Сторонами и действует до окончания срока найма.');
+  C(`Срок найма Помещения: с ${dLong(c.start)} по ${dLong(c.end)}`);
+  C('По истечении срока действия Договора Наниматель имеет преимущественное право на заключение договора найма на новый срок.');
+  C('Соглашение о заключении Договора на новый срок Стороны подписывают не позднее чем за 30 (тридцать) календарных дней до окончания срока его действия.');
+  C('Сторона, отказывающаяся от заключения Договора на новый срок, обязана известить об этом другую Сторону не позднее чем за 30 (тридцать) календарных дней до окончания срока его действия.');
+  C('Договор может быть досрочно расторгнут по соглашению Сторон.');
+  C('Каждая из Сторон вправе в одностороннем порядке расторгнуть Договор, уведомив другую Сторону не позднее чем за 30 (тридцать) календарных дней до даты расторжения. Уведомление направляется сообщением в мессенджере (WhatsApp, Telegram или MAX) по номеру телефона, указанному в разделе 9 Договора, либо ценным письмом с описью вложения по адресу, указанному в разделе 9 Договора. Сообщение в мессенджере считается надлежащим письменным уведомлением.');
+  C('Обеспечительный платёж возвращается Нанимателю в течение 3 (трёх) календарных дней с момента предъявления требования — при расторжении Договора по соглашению Сторон или по инициативе Наймодателя, а также при прекращении Договора по истечении срока его действия, если Наниматель не нарушал условия Договора. При досрочном расторжении Договора по инициативе Нанимателя обеспечительный платёж не возвращается.');
+  C('Наймодатель вправе в одностороннем порядке расторгнуть Договор, предупредив Нанимателя за 3 (три) календарных дня до даты расторжения, в следующих случаях:');
+  LI('нарушение Нанимателем сроков внесения платы за Помещение и иных платежей;');
+  LI('нарушение Нанимателем и проживающими с ним гражданами правил пользования Помещением, использование Помещения не по назначению или ухудшение его состояния;');
+  LI('нарушение условий, установленных в п. 4.3 и п. 5.2 Договора;');
+  LI('отказ Нанимателя от пересмотра размера платы за Помещение и обеспечительного платежа в случаях, предусмотренных п. 2.3 Договора.');
+  C('При любом расторжении Договора Наниматель и другие граждане, проживающие в Помещении, обязаны освободить его. Наймодатель вправе сменить замки или ограничить доступ Нанимателя в Помещение. За вещи, оставленные в Помещении, Наймодатель ответственности не несёт.');
+  C('Все изменения и дополнения к Договору оформляются письменно и действуют с момента их подписания Сторонами.');
+
+  H('Заключительные положения');
+  C('Заключая Договор, Стороны подтверждают, что:');
+  LI('действуют добровольно; отсутствуют обстоятельства, вынуждающие заключить Договор под влиянием обмана, насилия, угрозы или злонамеренного соглашения; признаки кабальной сделки отсутствуют;');
+  LI('понимают значение своих действий и не заблуждаются относительно сделки;');
+  LI('не лишены и не ограничены в дееспособности, не страдают заболеваниями, препятствующими осознавать значение своих действий и обстоятельства заключения Договора;');
+  LI('иные обстоятельства, препятствующие заключению Договора, отсутствуют, все необходимые разрешения и согласия получены.');
+  C('Споры и разногласия по Договору Стороны решают путём переговоров. Если договориться не удалось, спор разрешается в соответствии с законодательством Российской Федерации.');
+  C('Судебные споры рассматриваются судом общей юрисдикции по месту нахождения Помещения.');
+  C('С момента подписания Договора все предварительные устные и письменные соглашения Сторон теряют силу.');
+  C('Все приложения к Договору с момента их подписания Сторонами являются его неотъемлемой частью.');
+  C('Отношения Сторон, не урегулированные Договором, регулируются законодательством Российской Федерации.');
+  C('Договор составлен в двух экземплярах, имеющих одинаковую юридическую силу, по одному для каждой из Сторон.');
+
+  H('Дополнительные условия');
+  const tail='При этом обеспечительный платёж и ранее внесённая плата за Помещение Нанимателю не возвращаются.';
+  C('Если в Помещении обнаружены посторонние едкие запахи, возникшие по вине Нанимателя, в том числе запах сигаретного дыма, или выявлен факт курения в Помещении, Наймодатель вправе в одностороннем порядке расторгнуть Договор, предупредив Нанимателя за 3 (три) календарных дня до даты расторжения. '+tail);
+  C('Если в Помещении обнаружены посторонние лица или животные, проживание которых не согласовано с Наймодателем письменно, Наймодатель вправе в одностороннем порядке расторгнуть Договор, предупредив Нанимателя за 3 (три) календарных дня до даты расторжения. '+tail);
+  C(`При передаче Помещения Нанимателю передаются исправные ключи: от входной двери — ${B(c.keys,3)} шт., от домофона — ${B(c.keysIntercom,3)} шт. В случае утраты, поломки, невозврата или возврата ключей в неисправном состоянии Наниматель оплачивает Наймодателю изготовление новых ключей: ${rubW(1000)} за каждый ключ от двери и ${rubW(2000)} за каждый ключ от домофона.`);
+  C(`При прекращении Договора Наниматель обязан вернуть Помещение чистым и убранным. Если Помещение возвращено со значительными загрязнениями, неубранным мусором или иными признаками отсутствия уборки, Наниматель оплачивает Наймодателю уборку в размере ${rubW(10000)}.`);
+  C('Наниматель возмещает стоимость утраченного, повреждённого или недостающего имущества по рыночной цене на дату выявления — в течение 3 (трёх) календарных дней либо путём удержания из обеспечительного платежа. В случае удержания Наниматель обязан пополнить обеспечительный платёж до исходного размера в течение 3 (трёх) календарных дней с даты требования Наймодателя. Если Наниматель этого не сделал, Наймодатель вправе расторгнуть Договор, предупредив Нанимателя за 3 (три) календарных дня до даты расторжения. '+tail);
+
+  H('Адреса и реквизиты Сторон');
+  const cell=(title,rows)=>[PAR([RUN(title,{b:1})],{jc:'left',after:60}),...rows.map(([l,v])=>PAR([RUN(l+': '),RUN(v)],{jc:'left',after:40}))];
+  out.push(TBL([[cell('Наймодатель',[['ФИО',B(L.name,30)],['Дата рождения',dShort(L.birth)],['Паспорт',B(L.passport,16)],['Выдан',B(L.issued,30)],['Адрес регистрации',B(L.reg,26)],['Телефон',B(L.phone,18)],['Счёт №',B(L.account,22)],['Карта №',B(L.card,20)],['Банк получателя',B(L.bank,20)]]),
+    cell('Наниматель',[['ФИО',B(N.name,30)],['Дата рождения',dShort(N.birth)],['Паспорт',B(N.passport,16)],['Выдан',B(N.issued,30)],['Адрес регистрации',B(N.reg,26)],['Телефон',B(N.phone,18)]])]],[4819,4819],0));
+  const signs=(a,b)=>TBL([[[PAR(a,{jc:'left',after:40}),PAR(`________________ / ${shortName(L.name)} /`,{jc:'left'})],[PAR(b,{jc:'left',after:40}),PAR(`________________ / ${shortName(N.name)} /`,{jc:'left'})]]],[4819,4819],0);
+  out.push(PAR('',{after:200}));out.push(signs('Наймодатель:','Наниматель:'));
+
+  /* --- Приложение № 1: передаточный акт --- */
+  out.push(PAR([RUN('Приложение № 1',{b:1})],{jc:'right',pb:1,after:0}));
+  out.push(PAR(`к Договору найма жилого помещения от ${dLong(c.sign)}`,{jc:'right',after:240}));
+  out.push(PAR([RUN('ПЕРЕДАТОЧНЫЙ АКТ',{b:1,sz:26})],{jc:'center',after:200}));
+  out.push(TBL([[PAR('г. '+B(c.city,16),{jc:'left',after:0}),PAR(dLong(c.start),{jc:'right',after:0})]],[4819,4819],0));
+  out.push(PAR('',{after:120}));
+  out.push(PAR([RUN(citizen(L.name)+' РФ '),RUN(B(L.name,36),{b:1}),RUN(`, ${named(L.name)} в дальнейшем «Наймодатель», с одной стороны, и ${citizen(N.name).toLowerCase()} РФ `),RUN(B(N.name,36),{b:1}),RUN(`, ${named(N.name)} в дальнейшем «Наниматель», с другой стороны, составили настоящий акт о нижеследующем:`)],{first:567}));
+  let a=0;const A=t=>{a++;out.push(PAR([RUN(a+'. ',{b:1}),RUN(t)],{first:567}))};
+  A(`В соответствии с Договором найма жилого помещения от ${dLong(c.sign)} Наймодатель передал, а Наниматель принял жилое помещение — ${actSubj} по адресу: ${B(o.name,40)} (далее — Помещение).`);
+  A('Недостатки Помещения: не имеются.');
+  A('Помещение передано со следующим имуществом:');
+  const th=t=>PAR([RUN(t,{b:1,sz:20})],{jc:'center',after:0});const td=t=>PAR([RUN(t,{sz:20})],{jc:'center',after:0});
+  out.push(TBL([['№','Наименование','Фирма, модель','Размер','Цвет','Кол-во','Примечание'].map(th),...Array.from({length:12},(_,i)=>[td(String(i+1)),td(''),td(''),td(''),td(''),td(''),td('')])],[500,2300,1700,1100,1100,900,2038],1,1));
+  out.push(PAR('',{after:60}));
+  A('Помещение, в том числе мебель, техника и отделка, пригодно для проживания и использования, находится в хорошем состоянии без повреждений, вся техника исправна. Недостатков, кроме указанных в п. 2 акта, нет.');
+  A(`Показания приборов учёта на дату передачи: электроэнергия — ${elTxt}; ${waterTxt}.`);
+  A(`Наймодатель передал, а Наниматель принял исправные ключи: от входной двери — ${B(c.keys,3)} шт., от домофона — ${B(c.keysIntercom,3)} шт.`);
+  A(`Наниматель передал, а Наймодатель принял обеспечительный платёж в размере ${money(c.deposit)} согласно п. 3.2 Договора.`);
+  A('Претензий у Нанимателя к Наймодателю по передаваемому Помещению не имеется.');
+  A('Акт составлен в двух экземплярах, имеющих одинаковую юридическую силу, по одному для каждой из Сторон.');
+  out.push(PAR('',{after:200}));out.push(signs('Передал — Наймодатель:','Принял — Наниматель:'));
+  return out.join('');
+}
+
+/* --- упаковка .docx: ZIP без сжатия, собранный вручную --- */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_T[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;
+  for(const[name,str]of files){const nb=enc.encode(name),db=enc.encode(str),crc=crc32(db);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,crc,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
+    parts.push(h,nb,db);
+    const e=new DataView(new ArrayBuffer(46));e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint16(14,0x21,true);e.setUint32(16,crc,true);e.setUint32(20,db.length,true);e.setUint32(24,db.length,true);e.setUint16(28,nb.length,true);e.setUint32(42,off,true);
+    cd.push(e,nb);off+=30+nb.length+db.length}
+  const size=cd.reduce((a,x)=>a+x.byteLength,0);const end=new DataView(new ArrayBuffer(22));end.setUint32(0,0x06054b50,true);end.setUint16(8,files.length,true);end.setUint16(10,files.length,true);end.setUint32(12,size,true);end.setUint32(16,off,true);
+  return new Blob([...parts,...cd,end],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})}
+function contractDocx(o){const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="${W}"><w:body>${contractBody(o)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="850" w:bottom="1134" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="${W}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="ru-RU"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="252" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
+  const now=new Date().toISOString().replace(/\.\d+Z$/,'Z');
+  return zipStore([
+    ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'],
+    ['word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['word/document.xml',doc],['word/styles.xml',styles],
+    ['docProps/core.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Договор найма жилого помещения</dc:title><dc:creator>Учёт аренды</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`]])}
+function downloadContract(o){const blob=contractDocx(o);
+  /* имя файла латиницей: русские имена файлов теряются в части браузеров */
+  const TR={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+  const lat=t=>String(t).toLowerCase().split('').map(ch=>TR[ch]??ch).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const street=(o.name.split(',').slice(1,3).join(' ').replace(/\b(ул|д|кв|пр|пер)\.?\s/gi,'')||o.name);
+  const nm=['dogovor-naima',lat(street),o.tenant&&o.tenant.name?lat(o.tenant.name.split(/\s+/)[0]):''].filter(Boolean).join('-').slice(0,90)+'.docx';
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
+
+
 /* ---------- вид ---------- */
 const ICON={
   home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>',
@@ -520,19 +782,30 @@ function vObject(){
   const[st,c]=objStatus(o);
   let body='';
   if(ui.tab==='contract'){
-    const left=o.contract.end?daysBetween(TODAY,o.contract.end):null;
+    const c=o.contract,L=o.landlord||{},N=o.tenant;
+    const left=c.end?daysBetween(TODAY,c.end):null;const miss=contractMissing(o);const pct=Math.round((CF_REQ-miss.length)/CF_REQ*100);
+    const who=k=>UTIL_WHO[c.util[k]].toLowerCase();
+    const utilTxt=[...new Set(['el','water','heat'].map(who))].length===1?'всё платит '+who('el'):`свет — ${who('el')}, вода — ${who('water')}, отопление — ${who('heat')}`;
     body=`${left!==null&&left>=0&&left<=45?`<div class="alert warn">Договор заканчивается через ${left} дн. Продлить, изменить цену или искать нового жильца?</div>`:''}
+    <div class="card"><div class="total"><div><div class="label">Договор заполнен</div><div class="big num" style="font-size:24px">${pct}%</div></div><button class="btn small ghost" data-act="contract">${pct<100?'Заполнить':'Изменить'}</button></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <p class="note" style="margin:8px 0 0">${miss.length?`Не хватает: ${esc(miss.slice(0,3).join('; ').toLowerCase())}${miss.length>3?` и ещё ${miss.length-3}`:''}. Пустые места в договоре останутся линиями — их можно дописать от руки.`:'Все данные на месте: договор готов к печати.'}</p></div>
     <div class="card"><dl class="kv">
-      <dt>Арендатор</dt><dd>${esc(o.tenant.name)||'—'}</dd>
-      <dt>Телефон</dt><dd>${esc(o.tenant.phone)||'—'}</dd>
-      <dt>Срок</dt><dd>${o.contract.start?fdateY(o.contract.start)+' — '+fdateY(o.contract.end):'—'}</dd>
-      <dt>Плата</dt><dd>${rub(o.rent)} в месяц</dd>
-      <dt>Дата оплаты</dt><dd>${o.payDay}-е число</dd>
-      <dt>Залог</dt><dd>${rub(o.contract.deposit)}</dd>
-      ${S.role==='agent'?`<dt>Собственник</dt><dd>${esc(o.owner)||'—'}</dd><dt>Комиссия</dt><dd>${o.commission||0}%</dd>`:''}
+      <dt>Наймодатель</dt><dd>${esc(L.name)||'—'}</dd>
+      <dt>Наниматель</dt><dd>${esc(N.name)||'—'}</dd>
+      <dt>Телефон нанимателя</dt><dd>${esc(N.phone)||'—'}</dd>
+      <dt>Срок</dt><dd>${c.start?fdateY(c.start)+' — '+fdateY(c.end):'—'}</dd>
+      <dt>Плата</dt><dd>${rub(o.rent)} в месяц, до ${o.payDay}-го</dd>
+      <dt>Залог</dt><dd>${rub(c.deposit)}</dd>
+      <dt>Коммуналка</dt><dd>${utilTxt}</dd>
+      <dt>Ключи</dt><dd>${c.keys} от двери, ${c.keysIntercom} от домофона</dd>
+      ${S.role==='agent'?`<dt>Комиссия агента</dt><dd>${o.commission||0}%</dd>`:''}
     </dl></div>
+    <button class="btn wide" data-act="docx">Скачать договор (Word)</button>
+    <button class="btn ghost wide" data-act="contract">Изменить данные договора</button>
     <button class="btn ghost wide" data-act="invite">Пригласить арендатора</button>
-    <button class="btn ghost wide" data-act="tenantView">Как видит арендатор</button>`;
+    <button class="btn ghost wide" data-act="tenantView">Как видит арендатор</button>
+    <p class="note">В файле — договор и передаточный акт (приложение № 1) с показаниями счётчиков на дату заезда.</p>`;
   }
   if(ui.tab==='pay'){
     const s=schedule(o);
@@ -645,6 +918,7 @@ function sheet(){
     ${r.photo?`<img class="photo-big" src="${r.photo}" alt="Фото счётчиков">`:'<div class="alert info">Фото не приложено.</div>'}
     <p class="note">${r.by==='tenant'?'Передал арендатор. ':''}Сверьте цифры с фото. Если есть ошибка, исправьте и сохраните.</p>
     ${meterFields(o,'v_',r)}`}
+  if(s==='contract')h=contractForm(o);
   if(s==='kind')h=`<h3>Вид недвижимости</h3>${kindPick(kindOf(o))}<p class="note">От вида зависит иконка объекта. Для комнаты не показываем число комнат.</p>`;
   if(s==='tariffs')h=`<h3>Тарифы</h3>${f('t_cold',mi('cold','cold')+'Холодная вода, ₽ за м³','number',o.tariffs.cold,'step="0.01" min="0"')}${f('t_hot',mi('hot','hot')+'Горячая вода, ₽ за м³','number',o.tariffs.hot,'step="0.01" min="0"')}${elKeys(o).map(([k,l])=>f('t_'+k,mi(...MI[k])+(k==='el'?'Электричество':'Свет, '+l)+', ₽ за кВт·ч','number',o.tariffs[k]??0,'step="0.01" min="0"')).join('')}
     <div class="f"><label for="t_mode">Счётчик электричества</label><select id="t_mode" name="t_mode">${Object.entries(EL_MODES).map(([k,l])=>`<option value="${k}" ${k===(o.elMode||'single')?'selected':''}>${l}</option>`).join('')}</select></div>
@@ -676,6 +950,7 @@ function submit(name,fd){
       contract:type==='long'?{start:g('o_start'),end:g('o_end'),deposit:n('o_dep')||0}:{start:'',end:'',deposit:0},
       payments:{},meters:[],tariffs:{cold:0,hot:0,el:0,el1:0,el2:0,el3:0},elMode:g('o_el')||'single',expenses:[],bookings:[],owner:g('o_owner')||'',commission:n('o_com')||0};
     if(type==='long'&&no.contract.end<no.contract.start)return'Конец договора раньше начала.';
+    if(type==='long'){ensureContract(no,S.me);no.contract.sign=no.contract.start;if(S.role==='agent'&&no.owner)no.landlord.name=no.landlord.name||no.owner}
     S.objects.push(no);ui.objId=no.id;ui.view='object';ui.tab=null;toast('Объект добавлен');return;
   }
   if(name==='addMeter'||name==='addMeterTenant'){
@@ -699,6 +974,7 @@ function submit(name,fd){
     Object.assign(r,v,{status:'ok'});if(changed)r.fixed=true;
     toast(changed?'Показания исправлены и приняты':'Показания приняты');return;
   }
+  if(name==='contract')return contractSubmit(o,g);
   if(name==='kind'){o.kind=KIND[g('k_kind')]?g('k_kind'):'flat';toast('Вид: '+KIND[o.kind][0].toLowerCase());return}
   if(name==='tariffs'){const t={...o.tariffs,cold:n('t_cold')||0,hot:n('t_hot')||0};elKeys(o).forEach(([k])=>t[k]=n('t_'+k)||0);o.tariffs=t;o.elMode=g('t_mode')||'single';toast('Тарифы сохранены');return}
   if(name==='addExp'){if(!n('e_amount'))return'Укажите сумму.';o.expenses.push({id:uid(),date:g('e_date'),cat:g('e_cat'),amount:n('e_amount'),note:g('e_note')||''});toast('Расход добавлен');return}
@@ -799,6 +1075,7 @@ function onTap(e){
     else if(a==='close'){ui.sheet=null;ui.err='';ui.photo=null}
     else if(a==='tenantView'){ui.view='tenant';window.scrollTo(0,0)}
     else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
+    else if(a==='docx'){downloadContract(o);toast('Договор скачан')}
     else if(a==='reset'){const pr=S.role;S=sample();S.role=pr;ui.view='home';save();toast('Примеры восстановлены')}
     else {ui.sheet=a;ui.err='';ui.photo=null}
   }
