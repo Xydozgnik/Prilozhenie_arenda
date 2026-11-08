@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Учёт аренды</title>
+<title>Порог — учёт аренды</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#2E4E24">
 <link rel="manifest" href="manifest.webmanifest">
@@ -341,9 +341,34 @@ html{-webkit-tap-highlight-color:transparent}
   .err.shake{animation:shake .4s var(--glide)}
   @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
 }
+
+/* заставка при запуске: рисуется арка, под ней «порог», появляется название, затем заставка тает */
+#splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:radial-gradient(60% 40% at 50% 42%,#3E6A31,transparent 72%),linear-gradient(170deg,#2E4E24,#16280F);color:#EEF4EA}
+#splash .sp-in{display:grid;justify-items:center;gap:4px;margin-top:-6vh}
+.sp-logo{width:118px;height:118px;overflow:visible}
+.sp-arch{stroke-dasharray:1;stroke-dashoffset:1;animation:spdraw .6s cubic-bezier(.65,0,.35,1) .08s forwards}
+.sp-line{transform-box:fill-box;transform-origin:center;transform:scaleX(0);animation:spline .5s var(--spring) .42s forwards}
+.sp-knob{transform-box:fill-box;transform-origin:center;transform:scale(0);animation:sppop .4s var(--spring) .66s forwards}
+.sp-name{font-family:var(--display);font-weight:600;font-size:36px;letter-spacing:-.01em;opacity:0;transform:translateY(12px);animation:sprise .5s var(--glide) .55s forwards}
+.sp-sub{font-size:15px;color:#B7CCAD;opacity:0;transform:translateY(8px);animation:sprise .5s var(--glide) .68s forwards}
+#splash.out{animation:spout .38s ease-in forwards;pointer-events:none}
+#splash.out .sp-in{animation:spzoom .38s ease-in forwards}
+@keyframes spdraw{to{stroke-dashoffset:0}}@keyframes spline{to{transform:scaleX(1)}}@keyframes sppop{to{transform:scale(1)}}
+@keyframes sprise{to{opacity:1;transform:none}}@keyframes spout{to{opacity:0;visibility:hidden}}@keyframes spzoom{to{transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){#splash{display:none}}
+/* знак «Порог» */
+.logo{display:grid;place-items:center;border-radius:28%;background:linear-gradient(160deg,#3A6230,#1B3015);box-shadow:0 6px 16px -6px rgb(27 48 21/.55),inset 0 1px 0 rgb(255 255 255/.12);flex:none}
+.logo svg{width:76%;height:76%}
+.top .brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.welcome .logo{width:76px;height:76px;box-shadow:0 10px 24px -8px rgb(0 0 0/.45),inset 0 1px 0 rgb(255 255 255/.14);background:linear-gradient(160deg,#4A7A3D,#22401A)}
+.auth h1.bname{margin-bottom:0}.auth .bsub{margin:-2px 0 4px;color:var(--muted);font-size:15px}
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sp-in">
+  <svg class="sp-logo" viewBox="0 0 48 48" fill="none"><path class="sp-arch" pathLength="1" d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path class="sp-line" d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle class="sp-knob" cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg>
+  <div class="sp-name">Порог</div><div class="sp-sub">учёт аренды</div></div></div>
+<script>try{if(localStorage.getItem('arenda-lang')==='en'){document.querySelector('.sp-name').textContent='Porog';document.querySelector('.sp-sub').textContent='rental manager'}}catch(e){}</script>
 
 <div id="root"></div>
 
@@ -873,7 +898,7 @@ function docxPack(bodyXml,title){const W='http://schemas.openxmlformats.org/word
     ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'],
     ['word/_rels/document.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
     ['word/document.xml',doc],['word/styles.xml',styles],
-    ['docProps/core.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xe(title)}</dc:title><dc:creator>Учёт аренды</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`]])}
+    ['docProps/core.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xe(title)}</dc:title><dc:creator>Порог</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`]])}
 const contractDocx=o=>docxPack(contractBody(o),'Договор найма жилого помещения');
 function saveBlob(blob,nm){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
 const TRL={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
@@ -917,7 +942,9 @@ const ICON={
   objects:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>',
   finance:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   profile:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'};
-function top(title,back){return `${navigator.onLine?'':'<div class="offbar" role="status">Нет интернета — работаем офлайн. Всё сохраняется на телефоне.</div>'}<header class="top">${back?`<button class="back" data-act="back" aria-label="Назад">←</button>`:''}<h1>${esc(title)}</h1><span class="proto">прототип</span></header>`}
+const LOGO_SVG='<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg>';
+const logo=px=>`<span class="logo" style="width:${px}px;height:${px}px">${LOGO_SVG}</span>`;
+function top(title,back){return `${navigator.onLine?'':'<div class="offbar" role="status">Нет интернета — работаем офлайн. Всё сохраняется на телефоне.</div>'}<header class="top">${back?`<button class="back" data-act="back" aria-label="Назад">←</button>`:''}${title==='@brand'?`<div class="brand">${logo(34)}<h1>Порог</h1></div>`:`<h1>${esc(title)}</h1>`}<span class="proto">прототип</span></header>`}
 function nav(){const it=[['home','Главная'],['objects','Объекты'],['finance','Финансы'],['profile','Профиль']];
   const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view==='settings'||ui.view==='help'?'profile':ui.view==='owner'?'finance':ui.view;
   return `<nav class="nav"><div>${it.map(([k,l])=>`<button data-nav="${k}" ${v===k?'aria-current="page"':''}>${ICON[k]}${l}</button>`).join('')}</div></nav>`}
@@ -934,8 +961,8 @@ function vAuth(){const A=ui.auth,st=A.step,err=ui.err?`<div class="err">${esc(ui
   const head=to=>`<div class="arow">${to?`<button type="button" class="back" data-auth="${to}" aria-label="Назад">←</button>`:'<span></span>'}<span class="proto">прототип</span></div>`;
   if(st==='welcome')return `<div class="onb auth">
     ${head('')}
-    <div class="welcome hero"><div class="wico">${ico('building','acc','lg')}${ico('door','acc','lg')}${ico('cottage','acc','lg')}</div>${spark([2,3,2.6,4,3.6,5.4,5,7])}</div>
-    <h1>Учёт аренды</h1>
+    <div class="welcome hero"><div class="wico">${logo(76)}</div>${spark([2,3,2.6,4,3.6,5.4,5,7])}</div>
+    <h1 class="bname">Порог</h1><p class="bsub">учёт аренды</p>
     <p class="lead">Квартиры, договоры, оплаты, счётчики и брони — в одном приложении. Арендатор сам передаёт показания и отмечает оплату.</p>
     <button class="btn wide" data-auth="start-landlord">Войти по номеру телефона</button>
     <button class="btn ghost wide" data-auth="start-tenant">Я арендатор, у меня есть код</button>
@@ -995,7 +1022,7 @@ function vHome(){
   const m=monthSummary();const pct=m.expected?Math.round(m.received/m.expected*100):0;
   const ev=events().slice(0,7);
   const k=mkey(TODAY);
-  return top('Главная')+`<main>
+  return top('@brand')+`<main>
     <div class="sum3">
       <div class="card wide hero"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div>${spark([-7,-6,-5,-4,-3,-2,-1,0].map(i=>monthInc(mkey(addMonths(TODAY.slice(0,8)+'01',i)))))}<div class="note num">из ${rub(m.expected)} ожидаемых</div>
         <div class="bar" style="width:100%" role="img" aria-label="Получено ${pct}%"><i style="width:${pct}%"></i></div></div>
@@ -1290,7 +1317,7 @@ function vSettings(){const L=S.lock||{mode:'none'};
    Где это недоступно (файл с компьютера, браузер без сканера), показываем имитацию. */
 const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function bioAvailable(){try{return !!(window.PublicKeyCredential&&isSecureContext&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}}
-async function enableBio(){if(await bioAvailable()){try{const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Учёт аренды'},
+async function enableBio(){if(await bioAvailable()){try{const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Порог'},
       user:{id:crypto.getRandomValues(new Uint8Array(16)),name:(S.user&&S.user.phone)||'user',displayName:(S.user&&S.user.name)||'Пользователь'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
       authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}});
     S.lock={...S.lock,mode:'bio',cred:b64(cred.rawId),sim:false};save();toast('Вход по отпечатку или лицу включён');render();return}catch(e){toast('Биометрию не включили: телефон не подтвердил');return}}
@@ -1355,7 +1382,7 @@ function vHelp(){const fb=(S.feedback||[]).slice().reverse();
     <h2>Что нового</h2>
     <div class="list">${CHANGES.map(([d,t])=>`<div class="row"><div class="main"><div class="t">${d}</div><div class="s">${t}</div></div></div>`).join('')}</div>
     <h2>О приложении</h2>
-    <div class="card"><dl class="kv"><dt>Версия</dt><dd>0.9 · прототип</dd><dt>Поддержка</dt><dd>чат появится в рабочей версии</dd></dl>
+    <div class="card"><dl class="kv"><dt>Название</dt><dd>Порог — учёт аренды</dd><dt>Версия</dt><dd>0.9 · прототип</dd><dt>Поддержка</dt><dd>чат появится в рабочей версии</dd></dl>
       <p class="note">Политика обработки персональных данных и условия использования появятся до публикации в RuStore.</p></div>
     <p class="note">В прототипе сообщения и отметки сохраняются только на этом телефоне. В рабочей версии они будут приходить нам.</p>
   </main>`}
@@ -1777,7 +1804,7 @@ Object.assign(EN,{'Объявление':'Listing','Файлы':'Files','Изм�
 'Оценка по выбранному в Настройках режиму: НПД 4%, НДФЛ 13% (с 2,4 млн ₽ в год — выше), ИП на УСН «доходы» 6%. Вычеты, расходы и региональные ставки не учитываются — это ориентир, а не расчёт для декларации.':'Estimated by the regime chosen in Settings: NPD 4%, PIT 13% (higher above 2.4 mln ₽ a year), sole trader on simplified “income” 6%. Deductions, expenses and regional rates are not included — this is a guide, not a tax-return calculation.',
 'Напоминать о чеке НПД':'Remind about NPD receipts','после каждой оплаты':'after each payment',
 'Резервная копия':'Backup','Сейчас все данные хранятся только на этом телефоне. Сохраните копию в файл — например, в облако или себе в мессенджер, — и сможете восстановить её на новом телефоне.':'Right now all data is stored only on this phone. Save a copy to a file — e.g. to the cloud or send it to yourself in a messenger — and you can restore it on a new phone.',
-'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Учёта аренды»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
+'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Порога»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Порог':'Porog','учёт аренды':'rental manager','Порог — учёт аренды':'Porog — rental manager','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
 'Данные собственника':'Owner details','Новый собственник':'New owner','Изменить данные':'Edit details','Телефон':'Phone','Паспорт':'Passport','Реквизиты':'Bank details','Комиссия':'Commission','Заметка':'Note','Привязать объекты':'Link properties','Объекты собственника':'Owner’s properties',
 'Объектов пока нет. Привяжите объекты — данные собственника попадут в их договоры.':'No properties yet. Link properties — the owner’s details will go into their leases.',
 'Собственник — наймодатель в договорах его объектов. Данные сразу подставятся в эти договоры.':'The owner is the landlord in the leases of their properties. The details are filled into those leases right away.',
@@ -1944,7 +1971,7 @@ function onTap(e){
     else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
     else if(a==='docx'){downloadContract(o);toast('Договор скачан')}
     else if(a==='invite'){o.invited=true;ui.sheet='invite';ui.err='';save()}
-    else if(a==='copyInvite'){const link=location.origin+location.pathname+'?invite='+o.invite;const txt=`Приглашение в «Учёт аренды»: ${link} — или введите код ${o.invite} на первом экране.`;
+    else if(a==='copyInvite'){const link=location.origin+location.pathname+'?invite='+o.invite;const txt=`Приглашение в приложение «Порог»: ${link} — или введите код ${o.invite} на первом экране.`;
       (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Приглашение скопировано'),()=>toast('Код приглашения: '+o.invite))}
     else if(a==='logout'){S.session=null;ui.sheet=null;ui.view='home';ui.auth={step:'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:'',sent:0,name:''};M.auth=null;save();window.scrollTo(0,0)}
     else if(a==='install'){if(installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;render()})}return}
@@ -2034,7 +2061,7 @@ root.addEventListener('input',e=>{const t=e.target;
   const out=root.querySelector('[data-total="'+pre+'"]');if(out)out.textContent='Всего: '+(vals.some(isNaN)?'—':+vals.reduce((a,b)=>a+b,0).toFixed(2))});
 root.addEventListener('change',e=>{if(e.target.id==='f_from'||e.target.id==='f_to'){if(e.target.value){ui.fin[e.target.id==='f_from'?'from':'to']=e.target.value;M.key=null;render()}}});
 root.addEventListener('change',async e=>{
-  if(e.target.id==='restore_in'&&e.target.files[0]){try{const d=JSON.parse(await e.target.files[0].text());if(!d||d.v!==1||!Array.isArray(d.objects))throw 0;ui.restoreData=d;ui.sheet='restore';ui.err='';render()}catch(er){toast('Это не файл копии «Учёта аренды»')}e.target.value='';return}
+  if(e.target.id==='restore_in'&&e.target.files[0]){try{const d=JSON.parse(await e.target.files[0].text());if(!d||d.v!==1||!Array.isArray(d.objects))throw 0;ui.restoreData=d;ui.sheet='restore';ui.err='';render()}catch(er){toast('Это не файл копии «Порога»')}e.target.value='';return}
   if(e.target.id==='doc_in'&&e.target.files[0]){const fl=e.target.files[0];e.target.value='';
     try{if(fl.type==='application/pdf'){if(fl.size>3*1024*1024){toast('PDF больше 3 МБ — сожмите его или сфотографируйте нужные страницы');return}
         const data=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(fl)});ui.docFile={type:'pdf',data,size:fl.size,name:fl.name}}
@@ -2052,6 +2079,9 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if
 addEventListener('appinstalled',()=>{installPrompt=null;toast('Приложение установлено на телефон')});
 addEventListener('online',()=>{toast('Интернет снова есть');render()});addEventListener('offline',()=>{toast('Нет интернета — работаем офлайн');render()});
 render();
+/* заставка: ~1,2 с, затем экран входа (или Главная) появляется со своей анимацией */
+(function(){const sp=document.getElementById('splash');if(!sp)return;if(RM.matches){sp.remove();return}
+  setTimeout(()=>{sp.classList.add('out');M.auth=null;M.key=null;M.view=null;render()},1250);setTimeout(()=>sp.remove(),1700)})();
 })();
 </script>
 </body>

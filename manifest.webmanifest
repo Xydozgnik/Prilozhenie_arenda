@@ -1,12 +1,12 @@
 {
- "name": "Учёт аренды",
- "short_name": "Аренда",
+ "name": "Порог — учёт аренды",
+ "short_name": "Порог",
  "description": "Квартиры, договоры, оплаты, счётчики и брони в одном приложении",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "orientation": "portrait",
- "background_color": "#ECEEE8",
+ "background_color": "#1B3015",
  "theme_color": "#2E4E24",
  "lang": "ru",
  "icons": [
