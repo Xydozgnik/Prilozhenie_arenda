@@ -375,8 +375,8 @@ html{-webkit-tap-highlight-color:transparent}
 <body>
 <div id="splash" aria-hidden="true"><div class="sp-in">
   <svg class="sp-logo" viewBox="0 0 48 48" fill="none"><path class="sp-arch" pathLength="1" d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path class="sp-line" d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle class="sp-knob" cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg>
-  <div class="sp-name">Порог</div><div class="sp-sub">учёт аренды</div></div></div>
-<script>try{if(localStorage.getItem('arenda-lang')==='en'){document.querySelector('.sp-name').textContent='Porog';document.querySelector('.sp-sub').textContent='rental manager'}}catch(e){}</script>
+  <div class="sp-name">Порог</div><div class="sp-sub">Учёт аренды</div></div></div>
+<script>try{if(localStorage.getItem('arenda-lang')==='en'){document.querySelector('.sp-name').textContent='Porog';document.querySelector('.sp-sub').textContent='Rental manager'}}catch(e){}</script>
 
 <div id="root"></div>
 
@@ -969,8 +969,8 @@ function vAuth(){const A=ui.auth,st=A.step,err=ui.err?`<div class="err">${esc(ui
   const head=to=>`<div class="arow">${to?`<button type="button" class="back" data-auth="${to}" aria-label="Назад">←</button>`:'<span></span>'}<span class="proto">прототип</span></div>`;
   if(st==='welcome')return `<div class="onb auth">
     ${head('')}
-    <div class="welcome hero"><div class="wico">${logo(76)}</div>${spark([2,3,2.6,4,3.6,5.4,5,7])}</div>
-    <h1 class="bname">Порог</h1><p class="bsub">учёт аренды</p>
+    <div class="welcome hero"><div class="wico">${logo(76)}</div>${spark([1,1.5,2.3,2.9,3.8,4.6,5.7,7])}</div>
+    <h1 class="bname">Порог</h1><p class="bsub">Учёт аренды</p>
     <p class="lead">Квартиры, договоры, оплаты, счётчики и брони — в одном приложении. Арендатор сам передаёт показания и отмечает оплату.</p>
     <button class="btn wide" data-auth="start-landlord">Войти по номеру телефона</button>
     <button class="btn ghost wide" data-auth="start-tenant">Я арендатор, у меня есть код</button>
@@ -1814,7 +1814,7 @@ Object.assign(EN,{'Объявление':'Listing','Файлы':'Files','Изм�
 'Оценка по выбранному в Настройках режиму: НПД 4%, НДФЛ 13% (с 2,4 млн ₽ в год — выше), ИП на УСН «доходы» 6%. Вычеты, расходы и региональные ставки не учитываются — это ориентир, а не расчёт для декларации.':'Estimated by the regime chosen in Settings: NPD 4%, PIT 13% (higher above 2.4 mln ₽ a year), sole trader on simplified “income” 6%. Deductions, expenses and regional rates are not included — this is a guide, not a tax-return calculation.',
 'Напоминать о чеке НПД':'Remind about NPD receipts','после каждой оплаты':'after each payment',
 'Резервная копия':'Backup','Сейчас все данные хранятся только на этом телефоне. Сохраните копию в файл — например, в облако или себе в мессенджер, — и сможете восстановить её на новом телефоне.':'Right now all data is stored only on this phone. Save a copy to a file — e.g. to the cloud or send it to yourself in a messenger — and you can restore it on a new phone.',
-'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Порога»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Порог':'Porog','учёт аренды':'rental manager','Порог — учёт аренды':'Porog — rental manager','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
+'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Порога»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Порог':'Porog','Учёт аренды':'Rental manager','Порог — учёт аренды':'Porog — rental manager','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
 'Данные собственника':'Owner details','Новый собственник':'New owner','Изменить данные':'Edit details','Телефон':'Phone','Паспорт':'Passport','Реквизиты':'Bank details','Комиссия':'Commission','Заметка':'Note','Привязать объекты':'Link properties','Объекты собственника':'Owner’s properties',
 'Объектов пока нет. Привяжите объекты — данные собственника попадут в их договоры.':'No properties yet. Link properties — the owner’s details will go into their leases.',
 'Собственник — наймодатель в договорах его объектов. Данные сразу подставятся в эти договоры.':'The owner is the landlord in the leases of their properties. The details are filled into those leases right away.',
