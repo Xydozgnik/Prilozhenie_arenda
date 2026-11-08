@@ -2089,9 +2089,9 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if
 addEventListener('appinstalled',()=>{installPrompt=null;toast('Приложение установлено на телефон')});
 addEventListener('online',()=>{toast('Интернет снова есть');render()});addEventListener('offline',()=>{toast('Нет интернета — работаем офлайн');render()});
 render();
-/* заставка: ~1,2 с, затем экран входа (или Главная) появляется со своей анимацией */
+/* заставка: ~2,2 с, затем экран входа (или Главная) появляется со своей анимацией */
 (function(){const sp=document.getElementById('splash');if(!sp)return;if(RM.matches){sp.remove();return}
-  setTimeout(()=>{sp.classList.add('out');M.auth=null;M.key=null;M.view=null;render()},1250);setTimeout(()=>sp.remove(),1700)})();
+  setTimeout(()=>{sp.classList.add('out');M.auth=null;M.key=null;M.view=null;render()},2250);setTimeout(()=>sp.remove(),2700)})();
 })();
 </script>
 </body>
