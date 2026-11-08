@@ -176,6 +176,17 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .seg button[aria-pressed="true"]{color:var(--ink);font-weight:600}
 .seg button:focus-visible{outline:2px solid var(--accent)}
 
+/* Выбор вида недвижимости: три плитки с иконками */
+.kinds{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-width:0}
+.kinds legend{font-size:13px;color:var(--muted);padding:0 0 6px}
+.kind{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;border-radius:16px;cursor:pointer;font-size:14px;
+  background:var(--surface-2);border:1.5px solid transparent;transition:border-color .2s,background-color .2s,transform .35s var(--spring)}
+.kind:active{transform:scale(.96)}
+.kind:has(input:checked){border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.kind:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.kind:not(:has(input:checked)) .ico{--t:var(--muted);--ts:var(--surface)}
+@media (prefers-reduced-motion:no-preference){.kind input:checked+.ico{animation:bump .5s var(--spring)}@keyframes bump{40%{transform:scale(1.14)}}}
+.objhead{display:flex;gap:12px;align-items:flex-start}
 /* Матовые карточки: полупрозрачный градиент, светлая кромка, мягкая тень */
 .card,.list,.ut,.tabs,.chip,.back{background:var(--card);border:1px solid var(--edge);box-shadow:var(--shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .ut{border-top:3px solid var(--t)}
@@ -260,7 +271,7 @@ function sample(){
   for(let i=-6;i<=0;i++){const k=mkey(addMonths(m1,i));o1.payments[k]={amount:45000,date:addMonths(m1,i)}}
   o1.meters=[{date:addMonths(TODAY.slice(0,8)+'20',-2),cold:412,hot:180,el1:11240,el2:3970},{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:419,hot:183,el1:11371,el2:4027}];
   o1.expenses=[{id:uid(),date:addMonths(m1,-3),cat:'Ремонт',amount:6800,note:'Замена смесителя'},{id:uid(),date:addMonths(m1,-1),cat:'Коммуналка',amount:5400,note:'Квитанция за месяц'}];
-  const o2={id:uid(),type:'long',name:'Химки, ул. Лавочкина, 9, кв. 31',area:36,rooms:1,rent:32000,payDay:3,
+  const o2={id:uid(),type:'long',kind:'room',name:'Химки, ул. Лавочкина, 9, кв. 31, комната',area:36,rooms:1,rent:32000,payDay:3,
     tenant:{name:'Игорь Петров',phone:'+7 925 000-00-00'},contract:{start:addMonths(m1,-10),end:addMonths(m1,8),deposit:32000},
     payments:{},meters:[],tariffs:{cold:52.5,hot:271.4,el:7.8},expenses:[],owner:'',commission:0};
   for(let i=-10;i<=-1;i++){const k=mkey(addMonths(m1,i));o2.payments[k]={amount:32000,date:addMonths(m1,i+0)}}
@@ -275,7 +286,13 @@ function sample(){
       {id:uid(),guest:'Сергей',from:addDays(TODAY,4),to:addDays(TODAY,8),sum:16800,paid:false},
       {id:uid(),guest:'Елена',from:addDays(TODAY,12),to:addDays(TODAY,14),sum:8400,paid:false}],
     expenses:[{id:uid(),date:addDays(TODAY,-6),cat:'Уборка',amount:1500,note:'После выезда'}],owner:'',commission:0};
-  return {v:1,role:null,objects:[o1,o2,o3]};
+  const o4={id:uid(),type:'long',kind:'house',name:'Мытищи, д. Жостово, ул. Садовая, 12',area:96,rooms:3,rent:85000,payDay:10,
+    tenant:{name:'Ольга Ковалёва',phone:'+7 903 000-00-00'},contract:{start:addMonths(m1,-3),end:addMonths(m1,9),deposit:85000},
+    payments:{},meters:[{date:addMonths(TODAY.slice(0,8)+'20',-1),cold:96,hot:41,el:15420}],tariffs:{cold:52.5,hot:271.4,el:6.4},elMode:'single',
+    expenses:[{id:uid(),date:addMonths(m1,-1),cat:'Ремонт',amount:4500,note:'Чистка дымохода'}],owner:'',commission:0};
+  for(let i=-3;i<=-1;i++){const k=mkey(addMonths(m1,i));o4.payments[k]={amount:85000,date:addDays(addMonths(m1,i),9)}}
+  o1.kind='flat';o3.kind='flat';
+  return {v:1,role:null,objects:[o1,o2,o4,o3]};
 }
 function fixIds(d){d.objects.forEach(o=>(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()}));return d}
 function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.v===1)return fixIds(d)}}catch(e){}return fixIds(sample())}
@@ -398,6 +415,8 @@ const G={
   key:'<circle class="fl" cx="7.5" cy="15.5" r="3.8"/><path d="M10.3 12.8 18.5 4.6M15.5 7.6l2.2 2.2M17.8 5.3l2 2"/>',
   bag:'<rect class="fl" x="4" y="8" width="16" height="11.5" rx="2.2"/><path d="M9 8V5.6h6V8M4 13.2h16"/>',
   camera:'<path class="fl" d="M4 8.2h3.2L8.8 6h6.4l1.6 2.2H20V19H4z"/><circle cx="12" cy="13.4" r="3.4"/>',
+  door:'<path d="M3.5 20.5h17"/><path d="M6.5 20.5V3.5h11v17"/><path class="fl" d="M6.5 3.5l6.8 1.8v16.4l-6.8-1.2z"/><circle class="sd" cx="11.4" cy="12.6" r=".95"/><path d="M15 9.5v4" stroke-opacity=".5"/>',
+  cottage:'<path class="fl" d="M4.8 11.2 12 5l7.2 6.2V20H4.8z"/><path d="M2.6 12.6 12 4.4l9.4 8.2M15.8 7.3V4.5h2.2v4.7M10.2 20v-4.6h3.6V20M2.5 20h19"/><rect x="6.6" y="12.4" width="2.6" height="2.4" rx=".4"/><rect x="14.8" y="12.4" width="2.6" height="2.4" rx=".4"/>',
   building:'<rect class="fl" x="5" y="3" width="14" height="18" rx="1.8"/><path d="M9 7h1.5M13.5 7H15M9 11h1.5M13.5 11H15M9 15h1.5M13.5 15H15M10.5 21v-2.5h3V21"/>',
   bed:'<path d="M3 18.5V6.5"/><path class="fl" d="M3 13h18v5.5H3zM10 13V9.5h7.5a3.5 3.5 0 0 1 3.5 3.5"/><circle cx="6.6" cy="10.6" r="1.7"/><path d="M21 18.5v1.5M3 18.5v1.5"/>'};
 const svg=n=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+(G[n]||G.dots)+'</svg>';
@@ -406,6 +425,12 @@ const mi=(n,t)=>`<span class="mi t-${t}">${svg(n)}</span>`;
 /* какой иконкой и цветом рисовать каждый счётчик */
 const MI={cold:['cold','cold'],hot:['hot','hot'],el:['el','el'],el1:['sun','el'],el2:['moon','night'],el3:['dusk','el']};
 const CAT={'Ремонт':['wrench','acc'],'Мебель':['sofa','night'],'Мебель и техника':['sofa','night'],'Коммуналка':['receipt','cold'],'Уборка':['sparkle','ok'],'Налоги':['percent','bad'],'Ипотека':['house','el'],'Другое':['dots','mute']};
+/* вид недвижимости: подпись и иконка */
+const KIND={flat:['Квартира','building'],room:['Комната','door'],house:['Дом','cottage']};
+const kindOf=o=>KIND[o.kind]?o.kind:'flat';
+const objIco=(o,sz='lg')=>ico(KIND[kindOf(o)][1],o.type==='long'?'acc':'night',sz);
+function kindPick(val){return `<fieldset class="kinds"><legend>Вид недвижимости</legend>${Object.entries(KIND).map(([k,[l,g]])=>
+  `<label class="kind"><input type="radio" class="sr" name="k_kind" value="${k}" ${k===val?'checked':''}>${ico(g,'acc','lg')}<span>${l}</span></label>`).join('')}</fieldset>`}
 const catIco=c=>{const[n,t]=CAT[c]||CAT['Другое'];return ico(n,t)};
 function odo(v,u){const n=Number(v)||0;const fd=u==='м³'?2:1;const[a,b]=n.toFixed(fd).split('.');
   return `<span class="odo" role="img" aria-label="${n}">${(a.padStart(5,'0')+b).split('').map((c,i)=>`<i style="--d:${i}"${i>=Math.max(5,a.length)?' class="fr"':''}>${c}</i>`).join('')}</span>`}
@@ -460,7 +485,7 @@ function vObjects(){
   return top('Объекты')+`<main>
     <div class="chips" role="group" aria-label="Фильтр">${[['all','Все'],['long','Долгосрочные'],['short','Посуточные']].map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
     ${list.map(o=>{const[st,c]=objStatus(o);return `<div class="card obj" tabindex="0" data-open="${o.id}">
-      <div class="head"><div style="display:flex;gap:12px;min-width:0">${o.type==='long'?ico('building','acc','lg'):ico('bed','night','lg')}<div style="min-width:0"><div class="type">${o.type==='long'?'Долгосрочная':'Посуточная'}</div><div class="addr">${esc(o.name)}</div></div></div><span class="pill ${c}">${esc(st)}</span></div>
+      <div class="head"><div style="display:flex;gap:12px;min-width:0">${objIco(o)}<div style="min-width:0"><div class="type">${KIND[kindOf(o)][0]} · ${o.type==='long'?'долгосрочно':'посуточно'}</div><div class="addr">${esc(o.name)}</div></div></div><span class="pill ${c}">${esc(st)}</span></div>
       <div class="meta num"><span>${o.area} м²</span><span>${o.type==='long'?rub(o.rent)+' / мес':rub(o.rent)+' / сутки'}</span>${o.type==='long'&&o.tenant.name?`<span>${esc(o.tenant.name)}</span>`:''}${S.role==='agent'&&o.owner?`<span>Собственник: ${esc(o.owner)}</span>`:''}</div>
     </div>`}).join('')||'<div class="card note">Нет объектов этого типа</div>'}
     <button class="btn wide" data-act="addObj">Добавить объект</button>
@@ -522,8 +547,9 @@ function vObject(){
     <button class="btn wide" data-act="addBook">Добавить бронь</button>`;
   }
   return top(o.name.split(',').slice(1).join(',').trim()||o.name,true)+`<main>
-    <div class="card"><div class="type">${o.type==='long'?'Долгосрочная':'Посуточная'}</div><div style="font-weight:600;overflow-wrap:anywhere">${esc(o.name)}</div>
-      <div class="meta num" style="margin-top:6px"><span>${o.area} м²</span><span>${o.rooms} комн.</span><span class="pill ${c}">${esc(st)}</span></div></div>
+    <div class="card objhead">${objIco(o)}<div style="flex:1;min-width:0"><div class="type">${KIND[kindOf(o)][0]} · ${o.type==='long'?'долгосрочно':'посуточно'}</div><div style="font-weight:600;overflow-wrap:anywhere">${esc(o.name)}</div>
+      <div class="meta num" style="margin-top:6px"><span>${o.area} м²</span>${kindOf(o)==='room'?'':`<span>${o.rooms} комн.</span>`}<span class="pill ${c}">${esc(st)}</span></div></div>
+      <button class="btn small ghost" data-act="kind" aria-label="Изменить вид недвижимости">Вид</button></div>
     <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" data-tab-sel="${k}" aria-selected="${ui.tab===k}">${l}</button>`).join('')}</div>
     ${body}
   </main>`;
@@ -577,8 +603,9 @@ const f=(id,label,type='text',val='',extra='')=>`<div class="f"><label for="${id
 function sheet(){
   const o=S.objects.find(x=>x.id===ui.objId);const s=ui.sheet;let h='';
   if(s==='addObj')h=`<h3>Новый объект</h3>
+    ${kindPick('flat')}
     <div class="f"><label for="o_type">Тип аренды</label><select id="o_type" name="o_type"><option value="long">Долгосрочная</option><option value="short">Посуточная</option></select></div>
-    ${f('o_name','Адрес','text','','required placeholder="Город, улица, дом, квартира"')}
+    ${f('o_name','Адрес','text','','required placeholder="Город, улица, дом, квартира или комната"')}
     <div class="grid2">${f('o_area','Площадь, м²','number','','min="1" required')}${f('o_rooms','Комнат','number','1','min="1"')}</div>
     ${f('o_rent','Плата, ₽ (в месяц или за сутки)','number','','min="1" required')}
     <p class="note">Для долгосрочной аренды:</p>
@@ -598,6 +625,7 @@ function sheet(){
     ${r.photo?`<img class="photo-big" src="${r.photo}" alt="Фото счётчиков">`:'<div class="alert info">Фото не приложено.</div>'}
     <p class="note">${r.by==='tenant'?'Передал арендатор. ':''}Сверьте цифры с фото. Если есть ошибка, исправьте и сохраните.</p>
     ${meterFields(o,'v_',r)}`}
+  if(s==='kind')h=`<h3>Вид недвижимости</h3>${kindPick(kindOf(o))}<p class="note">От вида зависит иконка объекта. Для комнаты не показываем число комнат.</p>`;
   if(s==='tariffs')h=`<h3>Тарифы</h3>${f('t_cold',mi('cold','cold')+'Холодная вода, ₽ за м³','number',o.tariffs.cold,'step="0.01" min="0"')}${f('t_hot',mi('hot','hot')+'Горячая вода, ₽ за м³','number',o.tariffs.hot,'step="0.01" min="0"')}${elKeys(o).map(([k,l])=>f('t_'+k,mi(...MI[k])+(k==='el'?'Электричество':'Свет, '+l)+', ₽ за кВт·ч','number',o.tariffs[k]??0,'step="0.01" min="0"')).join('')}
     <div class="f"><label for="t_mode">Счётчик электричества</label><select id="t_mode" name="t_mode">${Object.entries(EL_MODES).map(([k,l])=>`<option value="${k}" ${k===(o.elMode||'single')?'selected':''}>${l}</option>`).join('')}</select></div>
     <p class="note">Смена типа счётчика действует для новых показаний. Расчёт заработает, когда будут два показания нового типа.</p>`;
@@ -623,7 +651,7 @@ function submit(name,fd){
     if(!g('o_name')||!n('o_rent')||!n('o_area'))return'Заполните адрес, площадь и плату.';
     if(S.objects.length>=LIMIT[S.role])return'На тарифе «Частник» до 5 объектов. Для большего числа нужен тариф агента.';
     const type=g('o_type');
-    const no={id:uid(),type,name:g('o_name'),area:n('o_area'),rooms:n('o_rooms')||1,rent:n('o_rent'),payDay:Math.min(31,Math.max(1,n('o_day')||1)),
+    const no={id:uid(),type,kind:KIND[g('k_kind')]?g('k_kind'):'flat',name:g('o_name'),area:n('o_area'),rooms:n('o_rooms')||1,rent:n('o_rent'),payDay:Math.min(31,Math.max(1,n('o_day')||1)),
       tenant:{name:type==='long'?g('o_tn')||'':'',phone:type==='long'?g('o_tp')||'':''},
       contract:type==='long'?{start:g('o_start'),end:g('o_end'),deposit:n('o_dep')||0}:{start:'',end:'',deposit:0},
       payments:{},meters:[],tariffs:{cold:0,hot:0,el:0,el1:0,el2:0,el3:0},elMode:g('o_el')||'single',expenses:[],bookings:[],owner:g('o_owner')||'',commission:n('o_com')||0};
@@ -651,6 +679,7 @@ function submit(name,fd){
     Object.assign(r,v,{status:'ok'});if(changed)r.fixed=true;
     toast(changed?'Показания исправлены и приняты':'Показания приняты');return;
   }
+  if(name==='kind'){o.kind=KIND[g('k_kind')]?g('k_kind'):'flat';toast('Вид: '+KIND[o.kind][0].toLowerCase());return}
   if(name==='tariffs'){const t={...o.tariffs,cold:n('t_cold')||0,hot:n('t_hot')||0};elKeys(o).forEach(([k])=>t[k]=n('t_'+k)||0);o.tariffs=t;o.elMode=g('t_mode')||'single';toast('Тарифы сохранены');return}
   if(name==='addExp'){if(!n('e_amount'))return'Укажите сумму.';o.expenses.push({id:uid(),date:g('e_date'),cat:g('e_cat'),amount:n('e_amount'),note:g('e_note')||''});toast('Расход добавлен');return}
   if(name==='addBook'){
