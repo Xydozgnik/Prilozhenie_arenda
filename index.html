@@ -289,7 +289,8 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .hero .label,.hero .note{color:rgb(238 244 234/.68)}
 .hero .bar{background:rgb(255 255 255/.14)}
 .spark{flex:1 1 120px;min-width:110px;height:58px;align-self:center}
-@media (prefers-reduced-motion:no-preference){.spark .ln{stroke-dasharray:1;animation:draw 1.3s var(--glide) .25s both}@keyframes draw{from{stroke-dashoffset:1}}}
+/* график открывается слева направо (не штрихом: Safari с non-scaling-stroke рисует штрих с пропусками) */
+@media (prefers-reduced-motion:no-preference){.spark{animation:wipe 1.3s var(--glide) .25s both}@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}}
 
 /* ---------- движение ---------- */
 /* Переезжающая подсветка активного пункта: меню, вкладки, фильтры, тема */
@@ -1040,7 +1041,7 @@ function spark(vals){if(vals.length<2||!vals.some(v=>v>0))return'';const mx=Math
   const P=vals.map((v,i)=>[i/(n-1)*100,30-v/mx*25]);const f1=x=>x.toFixed(1);
   /* плавная линия: между точками кривая с горизонтальными касательными */
   const d='M'+f1(P[0][0])+' '+f1(P[0][1])+P.slice(1).map((q,i)=>{const p0=P[i],mx2=(p0[0]+q[0])/2;return ` C${f1(mx2)} ${f1(p0[1])} ${f1(mx2)} ${f1(q[1])} ${f1(q[0])} ${f1(q[1])}`}).join('');
-  return `<svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC66A" stop-opacity=".42"/><stop offset="1" stop-color="#7CC66A" stop-opacity="0"/></linearGradient></defs><path d="${d} L100 32 L0 32Z" fill="url(#sg)"/><path class="ln" pathLength="1" d="${d}" fill="none" stroke="#9BD98A" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`}
+  return `<svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC66A" stop-opacity=".42"/><stop offset="1" stop-color="#7CC66A" stop-opacity="0"/></linearGradient></defs><path d="${d} L100 32 L0 32Z" fill="url(#sg)"/><path class="ln" d="${d}" fill="none" stroke="#9BD98A" stroke-width="1.8" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`}
 function vHome(){
   const m=monthSummary();const pct=m.expected?Math.round(m.received/m.expected*100):0;
   const ev=events().slice(0,7);
