@@ -1,0 +1,219 @@
+<title>Имя и цены приложения</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@300;500;600&display=swap">
+<style>
+/* Одна колонка-документ в палитре прототипа («Шалфей»): решение → эскизы → тарифы → калькулятор → что проверить */
+:root{
+  --bg:#ECEEE8; --card:#FFFFFF; --card-2:#F4F6F0; --line:#DCE2D4; --ink:#1A2016; --muted:#5F6858;
+  --accent:#2F5124; --fill:#2E4E24; --fill-2:#1B3015; --lime:#7CC66A; --cream:#EEF4EA;
+  --ok:#2E7A3A; --ok-soft:#E0EED9; --bad:#B23A32; --bad-soft:#F6E1DE; --warn:#93640F; --warn-soft:#F4EAD2;
+  --display:"Unbounded","Golos Text",system-ui,sans-serif; --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1110; --card:#191C1A; --card-2:#202422; --line:#2C322E; --ink:#E9EDE6; --muted:#9AA294;
+  --accent:#8CCB78; --ok:#7BCB8A; --ok-soft:#1A2B1D; --bad:#F08A80; --bad-soft:#3A1E1B; --warn:#E5B35E; --warn-soft:#352B16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1110; --card:#191C1A; --card-2:#202422; --line:#2C322E; --ink:#E9EDE6; --muted:#9AA294;
+  --accent:#8CCB78; --ok:#7BCB8A; --ok-soft:#1A2B1D; --bad:#F08A80; --bad-soft:#3A1E1B; --warn:#E5B35E; --warn-soft:#352B16; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1{font:500 clamp(26px,5vw,36px)/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:500 22px/1.25 var(--display);margin:18px 0 0;text-wrap:balance}
+h3{font:600 17px/1.3 var(--body);margin:0}
+p{margin:0;max-width:66ch}
+.lead{color:var(--muted);font-size:17px}
+.note{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.hero{background:linear-gradient(160deg,var(--fill),var(--fill-2));color:var(--cream);border:0}
+.hero .note{color:rgb(238 244 234/.75)}
+.hero b{color:#fff}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;align-self:flex-start}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.name{font:500 26px/1.1 var(--display)}
+.mono{font-variant-numeric:tabular-nums}
+ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+/* логотипы */
+.logos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.logo .row{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.tile{border-radius:22%;background:linear-gradient(160deg,#3A6230,#1B3015);display:grid;place-items:center;box-shadow:0 8px 20px -10px rgb(20 36 15/.6)}
+.tile svg{width:62%;height:62%}
+.t96{width:96px;height:96px}.t48{width:48px;height:48px}.t28{width:28px;height:28px;border-radius:7px}
+.word{display:flex;align-items:center;gap:10px;font:500 22px var(--display);margin-top:4px}
+.word .tile{width:36px;height:36px;border-radius:9px}
+.verdict{font-size:14px}
+/* тарифы */
+.tiers{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.tier .price{font:300 30px/1 var(--display)}.tier .per{color:var(--muted);font-size:14px}
+.tier.main{outline:2px solid var(--accent);outline-offset:-2px}
+.scroll{overflow-x:auto}.scroll table{min-width:540px}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:13px}
+td.r,th.r{text-align:right;white-space:nowrap}
+/* калькулятор */
+.calc{display:grid;gap:12px 18px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--muted)}
+.field input{font:inherit;font-variant-numeric:tabular-nums;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card-2);color:var(--ink);width:100%}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.out{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.out div{display:flex;flex-direction:column;gap:2px}.out b{font:300 24px var(--display)}
+.out .hero b{color:#fff}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="pill ok">Черновик для обсуждения · 8 ноября 2026</span>
+    <h1>Как назвать приложение и сколько за него брать</h1>
+    <p class="lead">Предлагаю название «Порог» и простую линейку: арендатор всегда бесплатно, один объект бесплатно, частнику 199 ₽ в месяц до 5 объектов, агенту — от 490 ₽. Ниже — почему, какие варианты отпали, эскизы логотипа и калькулятор выручки.</p>
+  </header>
+
+  <h2>Название</h2>
+  <p>Что требуем от названия: короткое и русское, легко произнести и найти в RuStore, не путается с уже существующими приложениями, нормально пишется латиницей (для адреса пакета и сайта) и говорит о хозяине жилья, а не о поиске квартиры.</p>
+
+  <div class="grid">
+    <div class="card hero">
+      <span class="pill ok" style="background:rgb(255 255 255/.14);color:#fff">Рекомендую</span>
+      <div class="name" style="color:#fff">Порог</div>
+      <p>Порог — граница своего жилья: через него входит арендатор, на нём передают ключи. Слово короткое, тёплое и не занятое приложениями аренды в найденном. В магазине: <b>«Порог — учёт аренды»</b>, латиницей <b>porog</b>.</p>
+      <p class="note">Минус: само по себе не говорит «аренда», поэтому подзаголовок в магазине обязателен.</p>
+    </div>
+    <div class="card">
+      <span class="pill warn">Запасной вариант</span>
+      <div class="name">Домовод</div>
+      <p>«Тот, кто ведёт дома», как садовод — сад. Сразу понятно, что про управление жильём. Приложений с таким названием не нашёл.</p>
+      <p class="note">Минус: длиннее и звучит старомодно, может напоминать «домоводство» — готовку и уборку.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Отпали</h3>
+    <div class="scroll"><table>
+      <tr><th>Вариант</th><th>Почему нет</th></tr>
+      <tr><td>Ключник</td><td>Легко спутать с приложениями «Ключ» (Kluch) и «Дом Ключ»</td></tr>
+      <tr><td>Сдаю</td><td>Очень близко к «Сдавайся» от Суточно.ру — тоже для владельцев жилья</td></tr>
+      <tr><td>Рента</td><td>Уже есть «Рента [+]» и «Рента: Недвижимость»</td></tr>
+      <tr><td>Арендал</td><td>Поиск выдаёт норвежский город Арендал — нас будет трудно найти</td></tr>
+    </table></div>
+    <p class="note">Проверял поиском по App Store и RuStore 8 ноября. Товарные знаки в ФИПС и свободные домены не проверены — это обязательный шаг до решения.</p>
+  </div>
+
+  <h2>Логотип: три эскиза для «Порога»</h2>
+  <p>Значок живёт в нашей палитре: лесной зелёный фон и салатовая линия-акцент, как в приложении. Каждый эскиз показан в трёх размерах: иконка в магазине, на главном экране и в уведомлении — так видно, читается ли он мелко.</p>
+
+  <div class="logos">
+    <div class="card logo">
+      <h3>Арка и порог</h3>
+      <div class="row">
+        <div class="tile t96"><svg viewBox="0 0 48 48" fill="none"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg></div>
+        <div class="tile t48"><svg viewBox="0 0 48 48" fill="none"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg></div>
+        <div class="tile t28"><svg viewBox="0 0 48 48" fill="none"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="4.4" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="5" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="word"><div class="tile"><svg viewBox="0 0 48 48" fill="none"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.6" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="4.4" stroke-linecap="round"/></svg></div>Порог</div>
+      <p class="verdict"><b>Мой выбор.</b> Самый простой силуэт, хорошо читается даже в 28 px. Арка — дверной проём, салатовая линия — сам порог.</p>
+    </div>
+    <div class="card logo">
+      <h3>«П» и приоткрытая дверь</h3>
+      <div class="row">
+        <div class="tile t96"><svg viewBox="0 0 48 48" fill="none"><path d="M14 38V11h20v27" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11l9.5 3v26.5L14 38z" fill="#9BD98A"/><path d="M10 38h28" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/></svg></div>
+        <div class="tile t48"><svg viewBox="0 0 48 48" fill="none"><path d="M14 38V11h20v27" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11l9.5 3v26.5L14 38z" fill="#9BD98A"/><path d="M10 38h28" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/></svg></div>
+        <div class="tile t28"><svg viewBox="0 0 48 48" fill="none"><path d="M14 38V11h20v27" stroke="#EEF4EA" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11l9.5 3v26.5L14 38z" fill="#9BD98A"/></svg></div>
+      </div>
+      <div class="word"><div class="tile"><svg viewBox="0 0 48 48" fill="none"><path d="M14 38V11h20v27" stroke="#EEF4EA" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11l9.5 3v26.5L14 38z" fill="#9BD98A"/></svg></div>Порог</div>
+      <p class="verdict">Буква «П» сама становится дверным проёмом. Перекликается с иконкой «Комната» в приложении. Мелко дверь сливается с рамкой.</p>
+    </div>
+    <div class="card logo">
+      <h3>Крыша над порогом</h3>
+      <div class="row">
+        <div class="tile t96"><svg viewBox="0 0 48 48" fill="none"><path d="M11 23L24 12l13 11" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 37V25M32 37V25" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M10 37.5h28" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <div class="tile t48"><svg viewBox="0 0 48 48" fill="none"><path d="M11 23L24 12l13 11" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 37V25M32 37V25" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M10 37.5h28" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <div class="tile t28"><svg viewBox="0 0 48 48" fill="none"><path d="M11 23L24 12l13 11" stroke="#EEF4EA" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 37.5h28" stroke="#9BD98A" stroke-width="5" stroke-linecap="round"/></svg></div>
+      </div>
+      <div class="word"><div class="tile"><svg viewBox="0 0 48 48" fill="none"><path d="M11 23L24 12l13 11" stroke="#EEF4EA" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 37V25M32 37V25" stroke="#EEF4EA" stroke-width="3.6" stroke-linecap="round"/><path d="M10 37.5h28" stroke="#9BD98A" stroke-width="4.4" stroke-linecap="round"/></svg></div>Порог</div>
+      <p class="verdict">Самый понятный «про жильё», но и самый частый образ: домик есть почти у всех приложений недвижимости.</p>
+    </div>
+  </div>
+
+  <h2>Цены</h2>
+  <div class="card">
+    <h3>Что берут другие</h3>
+    <div class="scroll"><table>
+      <tr><th>Сервис</th><th>Цены</th><th>Насколько точно</th></tr>
+      <tr><td>RentDesk (веб)</td><td>1 объект бесплатно · 199 ₽/мес до 3 · 499 ₽/мес до 10 · 999 ₽/мес без лимита; 3 месяца полного доступа бесплатно</td><td>Проверено на их сайте 5 ноября; сегодня сайт из этой среды не открылся</td></tr>
+      <tr><td>RealtyCalendar (посуточная)</td><td>55 / 75 / 105 ₽ в день, то есть около 1 650–3 150 ₽ в месяц</td><td>По данным агрегатора, у самого сервиса не проверено</td></tr>
+      <tr><td>ЧекаЧек, «Рента [+]», «Простая Аренда», «Планировщик аренды»</td><td>Бесплатно или цены не указаны в карточках</td><td>Карточки App Store и RuStore</td></tr>
+    </table></div>
+    <p class="note">RuStore берёт комиссию от 15% с подписок, а подключить подписку могут только ИП или юрлицо (проверено 5 ноября).</p>
+  </div>
+
+  <div class="tiers">
+    <div class="card tier"><h3>Арендатор</h3><div class="price">0 ₽</div><div class="per">всегда</div><p class="note">Оплата, «Я оплатил» с чеком, показания, заявки. Бесплатный арендатор приводит арендодателей.</p></div>
+    <div class="card tier"><h3>Старт</h3><div class="price">0 ₽</div><div class="per">1 объект</div><p class="note">Всё основное: платежи, счётчики, договор в Word, опись. Чтобы попробовать без риска.</p></div>
+    <div class="card tier main"><h3>Частник</h3><div class="price">199 ₽</div><div class="per">в месяц · до 5 объектов<br>1 990 ₽ в год</div><p class="note">Цена как у RentDesk за 3, но объектов 5, плюс мобильное приложение и кабинет арендатора.</p></div>
+    <div class="card tier"><h3>Агент</h3><div class="price">490 ₽</div><div class="per">до 10 · 990 ₽ до 30<br>1 990 ₽ без лимита</div><p class="note">Собственники, комиссия, отчёты и выплаты. Год — 10 месяцев цены.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>Почему так</h3>
+    <ul>
+      <li><b>Бесплатный объект и бесплатный арендатор</b> — главный способ расти: арендатор получает приглашение, видит приложение и сам становится арендодателем, когда сдаёт своё.</li>
+      <li><b>Не дешевле, а щедрее RentDesk.</b> Демпинг в 149 ₽ почти не добавит покупателей: для хозяина, который получает 40–50 тысяч в месяц с квартиры, разница в 50 ₽ незаметна. Больше объектов за ту же цену — понятнее.</li>
+      <li><b>Годовая оплата</b> — 10 месяцев цены за 12. Деньги приходят сразу, меньше отписок.</li>
+      <li><b>Пробный период — 30 дней</b> полного «Частника» после регистрации. RentDesk даёт 3 месяца; можно повторить, если в первые месяцы будет мало оплат.</li>
+      <li><b>Не берём процент с аренды</b> и не продаём «сдачу под ключ», как Яндекс Аренда, — мы инструмент хозяина, а не посредник.</li>
+    </ul>
+  </div>
+
+  <h2>Сколько это принесёт</h2>
+  <p>Подставьте свои цифры: сколько платящих пользователей и по какому тарифу. Комиссия RuStore — от 15%, налог 6% — это УСН «доходы» для ИП, моё допущение. Расходы на сервер — тоже допущение, уточним при выборе облака.</p>
+  <div class="card">
+    <div class="calc">
+      <div class="field"><label for="c_priv">Частников на подписке</label><input id="c_priv" type="number" min="0" value="300"></div>
+      <div class="field"><label for="c_pp">Цена «Частника», ₽/мес</label><input id="c_pp" type="number" min="0" value="199"></div>
+      <div class="field"><label for="c_ag10">Агентов «до 10» (490 ₽)</label><input id="c_ag10" type="number" min="0" value="30"></div>
+      <div class="field"><label for="c_ag30">Агентов «до 30» (990 ₽)</label><input id="c_ag30" type="number" min="0" value="10"></div>
+      <div class="field"><label for="c_agU">Агентов «без лимита» (1 990 ₽)</label><input id="c_agU" type="number" min="0" value="3"></div>
+      <div class="field"><label for="c_year">Платят за год, %</label><input id="c_year" type="number" min="0" max="100" value="30"></div>
+      <div class="field"><label for="c_fee">Комиссия магазина, %</label><input id="c_fee" type="number" min="0" max="100" value="15"></div>
+      <div class="field"><label for="c_tax">Налог, %</label><input id="c_tax" type="number" min="0" max="100" value="6"></div>
+      <div class="field"><label for="c_srv">Сервер и СМС, ₽/мес</label><input id="c_srv" type="number" min="0" value="8000"></div>
+    </div>
+  </div>
+  <div class="out" id="out" aria-live="polite"></div>
+  <p class="note" id="permonth"></p>
+
+  <h2>Что сделать до решения</h2>
+  <div class="card">
+    <ul>
+      <li>Проверить «Порог» и «Домовод» в базе товарных знаков ФИПС (классы 9 — программы, 36 — операции с недвижимостью, 42 — IT-услуги) — лучше с патентным поверенным.</li>
+      <li>Проверить свободные домены и названия в RuStore и Google Play.</li>
+      <li>Показать название, логотип и цены 5–10 знакомым арендодателям и спросить: «Заплатили бы 199 ₽ в месяц? Что должно быть, чтобы заплатили?»</li>
+      <li>Оформить ИП к запуску подписки: без него RuStore не подключит платежи.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function(){
+  const ids=['c_priv','c_pp','c_ag10','c_ag30','c_agU','c_year','c_fee','c_tax','c_srv'];
+  const v=id=>Math.max(0,Number(document.getElementById(id).value)||0);
+  const rub=n=>Math.round(n).toLocaleString('ru-RU')+' ₽';
+  function calc(){
+    /* годовая подписка = 10 месяцев цены за 12, поэтому средний месяц у годовых дешевле на 1/6 */
+    const disc=1-(v('c_year')/100)*(2/12);
+    const gross=(v('c_priv')*v('c_pp')+v('c_ag10')*490+v('c_ag30')*990+v('c_agU')*1990)*disc;
+    const afterFee=gross*(1-v('c_fee')/100);const tax=afterFee*(v('c_tax')/100);const net=afterFee-tax-v('c_srv');
+    const users=v('c_priv')+v('c_ag10')+v('c_ag30')+v('c_agU');
+    document.getElementById('out').innerHTML=
+      `<div class="card"><span class="note">Платят пользователи</span><b>${rub(gross)}</b><span class="note">в месяц, с учётом годовых</span></div>`+
+      `<div class="card"><span class="note">После комиссии магазина</span><b>${rub(afterFee)}</b><span class="note">в месяц</span></div>`+
+      `<div class="card hero"><span class="note">Остаётся после налога и сервера</span><b>${rub(net)}</b><span class="note">в месяц · ${rub(net*12)} в год</span></div>`;
+    document.getElementById('permonth').textContent=users?`В среднем один платящий пользователь приносит ${rub(gross/users)} в месяц до комиссии.`:'';
+  }
+  ids.forEach(id=>document.getElementById(id).addEventListener('input',calc));calc();
+})();
+</script>
