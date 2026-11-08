@@ -53,6 +53,7 @@
   --cold:#6EB0F5; --cold-soft:#172A40; --hot:#FF8A6E; --hot-soft:#3D1F19; --el:#F5C04E; --el-soft:#3A2E12; --night:#A49CF5; --night-soft:#25224A;
   --odo:#0A0C0B; --odo-ink:#F1F4EE; --grain:.1; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:radial-gradient(90% 55% at 100% 0%,var(--glow),transparent 70%),radial-gradient(80% 45% at 0% 100%,var(--glow2),transparent 70%),var(--bg);background-attachment:fixed;min-height:100vh;margin:0;color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
@@ -248,6 +249,26 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .segopt:has(input:checked){background:var(--pill);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgb(0 0 0/.12)}
 .segopt:has(input:focus-visible){outline:2px solid var(--accent)}
 .offbar{position:sticky;top:0;z-index:25;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:500;text-align:center;padding:8px 16px}
+.hint{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;background:none;color:inherit;opacity:.7;font:700 12px/1 var(--body);cursor:pointer;vertical-align:1px;padding:0;margin-left:2px}
+.hint:hover,.hint.pressed{opacity:1}
+.hero .hint{color:#EEF4EA}
+.art{border-top:1px solid var(--line)}.art:first-child{border-top:0}
+.art summary{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;font-weight:500;list-style:none}
+.art summary::-webkit-details-marker{display:none}
+.art summary::after{content:"›";margin-left:auto;color:var(--muted);font-size:22px;transition:transform .3s var(--spring)}
+.art[open] summary::after{transform:rotate(90deg)}
+.art summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.art ol{margin:0;padding:0 16px 14px 60px;display:flex;flex-direction:column;gap:6px;color:var(--ink)}
+.steps .bar{margin-top:0}
+.steplist{display:flex;flex-direction:column;gap:2px}
+.step{display:flex;align-items:center;gap:10px;border:0;background:none;padding:8px 2px;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:10px}
+.step:not(:disabled):hover{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)}
+.step.done{color:var(--muted);text-decoration:line-through;cursor:default}
+.step .chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none}
+.step.done .chk{background:var(--lime);border-color:var(--lime);color:#1B3015}
+.step .chev{margin-left:auto}
+.f textarea{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;width:100%;min-width:0;font:inherit;color:inherit;resize:vertical}
+.f textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
 /* Матовые карточки: полупрозрачный градиент, светлая кромка, мягкая тень */
 .card,.list,.ut,.tabs,.chip,.back{background:var(--card);border:1px solid var(--edge);box-shadow:var(--shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .ut{border-top:3px solid var(--t)}
@@ -392,7 +413,7 @@ function sample(){
 }
 function inviteCode(){return Array.from({length:6},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('')}
 /* дополняем данные старых версий: опись, залог, оплаты частями, чеки НПД, код приглашения */
-function fixIds(d){if(d.npd!==false)d.npd=true;d.payouts=d.payouts||[];d.objects.forEach(o=>{(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()});ensureContract(o,d.me);
+function fixIds(d){if(d.npd!==false)d.npd=true;d.payouts=d.payouts||[];d.help=d.help||{};d.feedback=d.feedback||[];d.votes=d.votes||{};d.objects.forEach(o=>{(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()});ensureContract(o,d.me);
   (o.expenses||[]).forEach(e=>{if(e.cat==='Коммуналка')e.cat='Коммунальные платежи'});
   o.requests=o.requests||[];o.clean=o.clean||{};o.inventory=o.inventory||[];o.dep=o.dep||{got:null,holds:[],back:null};o.dep.holds=o.dep.holds||[];o.meters=o.meters||[];o.tariffs=o.tariffs||{cold:0,hot:0,el:0};
   Object.values(o.payments||{}).forEach(r=>{if(r.claimed===true)r.claimed={amount:Math.max(0,o.rent-(r.amount||0)),date:r.claimDate||TODAY};if(r.amount>0&&!r.parts)r.parts=[{amount:r.amount,date:r.date}]});
@@ -867,7 +888,7 @@ const ICON={
   profile:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'};
 function top(title,back){return `${navigator.onLine?'':'<div class="offbar" role="status">Нет интернета — работаем офлайн. Всё сохраняется на телефоне.</div>'}<header class="top">${back?`<button class="back" data-act="back" aria-label="Назад">←</button>`:''}<h1>${esc(title)}</h1><span class="proto">прототип</span></header>`}
 function nav(){const it=[['home','Главная'],['objects','Объекты'],['finance','Финансы'],['profile','Профиль']];
-  const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view==='settings'?'profile':ui.view==='owner'?'finance':ui.view;
+  const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view==='settings'||ui.view==='help'?'profile':ui.view==='owner'?'finance':ui.view;
   return `<nav class="nav"><div>${it.map(([k,l])=>`<button data-nav="${k}" ${v===k?'aria-current="page"':''}>${ICON[k]}${l}</button>`).join('')}</div></nav>`}
 function dateBox(s){const d=parse(s);return `<div class="date"><b>${d.getDate()}</b><small>${MON_S[d.getMonth()]}</small></div>`}
 
@@ -950,6 +971,7 @@ function vHome(){
       <div class="card"><div class="label">Долги</div><div class="big num" style="font-size:20px;color:${m.totalDebt?'var(--bad)':'inherit'}">${rub(m.totalDebt)}</div></div>
       <div class="card"><div class="label">Объектов</div><div class="big num" style="font-size:20px">${S.objects.length}</div></div>
     </div>
+    ${firstStepsCard()}
     <h2>Ближайшие события</h2>
     <div class="list">${ev.length?ev.map(e=>`<div class="row tap" tabindex="0" data-open="${e.id}" data-tab="${e.tab}">${dateBox(e.d)}<div class="main"><div class="t">${esc(e.t)}</div><div class="s">${esc(e.s)}</div></div>${ico(e.i,e.c.slice(2),'sm')}</div>`).join(''):'<div class="row"><div class="main note">Событий нет</div></div>'}</div>
   </main>`}
@@ -1004,10 +1026,10 @@ function vObject(){
     const noNpd=S.npd!==false?s.filter(x=>x.rec.amount>0&&!x.rec.npd).length:0;
     const depInfo=!d.got?'Залог ещё не получен':[`получен ${fdate(d.got.date)}`,dp.held?`удержано ${rub(dp.held)}`:'',d.back?`возвращено ${rub(dp.back)} ${fdate(d.back.date)}`:''].filter(Boolean).join(' · ');
     body=`${debt(o)?`<div class="alert bad">Долг: ${rub(debt(o))}</div>`:''}
-    <div class="card"><div class="total"><div><div class="label">Залог${o.contract.deposit?' по договору '+rub(o.contract.deposit):''}</div><div class="big num" style="font-size:22px">${rub(dp.left)}</div><div class="note">${depInfo}</div></div>${ico('key',d.got&&!d.back?'acc':'mute')}</div>
+    <div class="card"><div class="total"><div><div class="label">Залог${o.contract.deposit?' по договору '+rub(o.contract.deposit):''} ${hint('dep')}</div><div class="big num" style="font-size:22px">${rub(dp.left)}</div><div class="note">${depInfo}</div></div>${ico('key',d.got&&!d.back?'acc':'mute')}</div>
       ${d.holds.length?`<div class="holds">${d.holds.map(h=>`<div class="note num">− ${rub(h.amount)} · ${esc(h.reason)} · ${fdate(h.date)}</div>`).join('')}</div>`:''}
       <div class="grid2" style="margin-top:10px">${!d.got?`<button class="btn small" data-act="depGot" style="grid-column:1/-1">Отметить получение залога</button>`:d.back?`<span class="note" style="grid-column:1/-1">Залог закрыт</span>`:`<button class="btn small ghost" data-act="depHold">Удержать</button><button class="btn small ghost" data-act="depBack">Вернуть</button>`}</div></div>
-    ${noNpd?`<div class="alert warn">Чек НПД не отмечен по ${noNpd} ${plural(noNpd,['оплате','оплатам','оплатам'])}. Сформируйте чек в «Моём налоге» и отметьте его в строке оплаты.</div>`:''}
+    ${noNpd?`<div class="alert warn">${hint('npd')} Чек НПД не отмечен по ${noNpd} ${plural(noNpd,['оплате','оплатам','оплатам'])}. Сформируйте чек в «Моём налоге» и отметьте его в строке оплаты.</div>`:''}
     <div class="list">${s.map(x=>payRow(o,x)).join('')||'<div class="row note">Нет платежей</div>'}</div>`;
   }
   if(ui.tab==='pay'&&o.type==='short'){
@@ -1025,7 +1047,7 @@ function vObject(){
       const tiles=mKeys(o).map(([k,l,u])=>{const[gn,tn]=MI[k];let d='<span class="d">Нет прошлых показаний</span>';
         if(a&&has(a,k)&&has(b,k)){const dv=+(b[k]-a[k]).toFixed(2);const pr=t[k]||0;sum+=dv*pr;d=`<span class="d num">+${dv} ${u} · <b>${rub(dv*pr)}</b></span>`}else full=false;
         return `<div class="ut t-${tn}">${'<div class="h">'+ico(gn,tn,'sm')+'<span>'+l+'</span></div>'}${has(b,k)?odo(b[k],u):'<span class="d">—</span>'}${d}</div>`}).join('');
-      calc=`<div class="util">${tiles}</div>${a?`<div class="card total"><div><div class="label">Коммунальные платежи за ${fdate(a.date)} — ${fdate(b.date)}</div><div class="note">Тарифы-примеры, введите свои${full?'':'. Часть счётчиков не с чем сравнить'}</div></div><div class="big num" style="font-size:22px">${rub(sum)}</div></div>`:''}`}
+      calc=`<p class="note" style="margin:0">Электросчётчик: ${EL_MODES[o.elMode||'single'].toLowerCase()} ${hint('el')}</p><div class="util">${tiles}</div>${a?`<div class="card total"><div><div class="label">Коммунальные платежи за ${fdate(a.date)} — ${fdate(b.date)}</div><div class="note">Тарифы-примеры, введите свои${full?'':'. Часть счётчиков не с чем сравнить'}</div></div><div class="big num" style="font-size:22px">${rub(sum)}</div></div>`:''}`}
     const toCheck=m.filter(r=>r.status==='check').length;
     body=`${toCheck?`<div class="alert warn">Арендатор передал показания: ${toCheck}. Сверьте цифры с фото и подтвердите.</div>`:''}${calc}<h2>История показаний</h2><div class="list">${m.slice().reverse().map(r=>`<div class="row tap" tabindex="0" data-meter="${r.id}">${r.photo?`<img class="thumb" src="${r.photo}" alt="Фото счётчика">`:ico('gauge','mute')}<div class="main num"><div class="t">${readTxt(o,r)}</div><div class="s">${fdate(r.date)}${r.by==='tenant'?' · от арендатора':''}${r.fixed?' · исправлено':''}${r.photo?'':' · без фото'}</div></div>${r.status==='check'?'<span class="pill p-warn">Проверить</span>':'<span class="pill p-ok">Принято</span>'}</div>`).join('')||'<div class="row note">Показаний пока нет</div>'}</div>
     <div class="grid2"><button class="btn" data-act="addMeter">Внести показания</button><button class="btn ghost" data-act="tariffs">Тарифы</button></div>`;
@@ -1106,6 +1128,7 @@ function vTenant(own){
     <div class="card"><div class="label">Последние показания${last?' · '+fdate(last.date):''}</div><div class="num" style="margin-top:6px">${last?readTxt(o,last):'Пока нет'}</div></div>
     <button class="btn wide" data-act="addMeterTenant">Передать показания</button>
     <button class="btn ghost wide" data-act="repair">Сообщить о поломке</button>
+    ${own?`<h2>Как пользоваться</h2><div class="list arts">${TENANT_HELP.map(helpArticle).join('')}</div><button class="btn ghost wide" data-act="idea">Идея или проблема? Напишите</button>`:''}
     ${(o.requests||[]).length?`<h2>Мои заявки</h2><div class="list">${o.requests.slice().sort((a,b)=>a.date<b.date?1:-1).map(r=>`<div class="row">${r.photo?`<img class="thumb" src="${r.photo}" alt="">`:ico('wrench',r.status==='done'?'mute':'acc','sm')}<div class="main"><div class="t">${esc(r.text)}</div><div class="s">${fdate(r.date)}</div></div><span class="pill ${REQ_ST[r.status][1]}">${REQ_ST[r.status][0]}</span></div>`).join('')}</div>`:''}
     ${own?`<button class="btn ghost wide" data-act="logout">Выйти</button><p class="note">Вы вошли по номеру ${fmtPhone(S.session.phone)} по приглашению арендодателя.</p>`:''}
   </main>`;
@@ -1137,7 +1160,7 @@ function vOwner(){const w=ui.owner;const Rg=finRange();const ob=S.objects.filter
   const pays=(S.payouts||[]).filter(x=>x.owner===w).sort((a,b)=>a.date<b.date?1:-1);const paidIn=pays.filter(x=>inPeriod(x,Rg)).reduce((a,x)=>a+x.amount,0);const left=Math.max(0,tot.net-paidIn);
   return top(w,true)+`<main>
     <div class="calhead">${ui.fin.mode==='custom'?'':'<button class="back" data-finnav="-1" aria-label="Раньше">‹</button>'}<div class="calt"><div class="t" style="text-transform:capitalize">${Rg.label}</div><div class="note">период как в «Финансах»</div></div>${ui.fin.mode==='custom'?'':'<button class="back" data-finnav="1" aria-label="Позже">›</button>'}</div>
-    <div class="sum3"><div class="card wide hero"><div><div class="label">К выплате собственнику</div><div class="big num">${rub(tot.net)}</div></div><div class="note num">получено ${rub(tot.inc)} · расходы ${rub(tot.exp)} · комиссия ${rub(tot.com)}</div>
+    <div class="sum3"><div class="card wide hero"><div><div class="label">К выплате собственнику ${hint('com')}</div><div class="big num">${rub(tot.net)}</div></div><div class="note num">получено ${rub(tot.inc)} · расходы ${rub(tot.exp)} · комиссия ${rub(tot.com)}</div>
       <div class="bar" style="width:100%"><i style="width:${tot.net>0?Math.min(100,Math.round(paidIn/tot.net*100)):0}%"></i></div><div class="note num" style="width:100%">выплачено ${rub(paidIn)} · осталось ${rub(left)}</div></div></div>
     <h2>Объекты</h2>
     <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(r.o.name.split(',').slice(1,3).join(',').trim()||r.o.name)}</div><div class="s num">получено ${rub(r.inc)} · расходы ${rub(r.exp)} · комиссия ${rub(r.com)} (${r.o.commission||0}%)</div></div><b class="num" style="white-space:nowrap">${rub(r.net)}</b></div>`).join('')}</div>
@@ -1150,7 +1173,8 @@ function vProfile(){
   const r=S.role==='agent'?'Агент':'Частник';
   return top('Профиль')+`<main>
     <div class="card"><dl class="kv"><dt>Имя</dt><dd>${esc(S.user?S.user.name:'—')}</dd><dt>Телефон</dt><dd>${S.user?fmtPhone(S.user.phone):'—'}</dd><dt>Роль</dt><dd>${r}</dd><dt>Тариф</dt><dd>${S.role==='agent'?'Агент (без лимита в прототипе)':S.objects.length<=1?'Бесплатный, 1 объект':'Подписка, до 5 объектов'}</dd><dt>Объектов</dt><dd>${S.objects.length}</dd></dl></div>
-    <div class="list"><div class="row tap" tabindex="0" data-act="settings">${ico('gear','acc','sm')}<div class="main"><div class="t">Настройки</div><div class="s">${LANG==='en'?'English':'Русский'} · вход: ${({none:'без защиты',pin:'код',bio:'отпечаток или лицо'})[(S.lock||{}).mode||'none']} · тема</div></div><span class="chev" aria-hidden="true">›</span></div></div>
+    <div class="list"><div class="row tap" tabindex="0" data-act="settings">${ico('gear','acc','sm')}<div class="main"><div class="t">Настройки</div><div class="s">${LANG==='en'?'English':'Русский'} · вход: ${({none:'без защиты',pin:'код',bio:'отпечаток или лицо'})[(S.lock||{}).mode||'none']} · тема</div></div><span class="chev" aria-hidden="true">›</span></div>
+      <div class="row tap" tabindex="0" data-act="help">${ico('sparkle','acc','sm')}<div class="main"><div class="t">Помощь и идеи</div><div class="s">как пользоваться · пожелания · что нового</div></div><span class="chev" aria-hidden="true">›</span></div></div>
     <button class="btn ghost wide" data-act="switchRole">Сменить роль на «${S.role==='agent'?'Частник':'Агент'}»</button>
     <button class="btn ghost wide" data-act="reset">Вернуть примеры данных</button>
     <button class="btn ghost wide" data-act="logout">Выйти из аккаунта</button>
@@ -1175,7 +1199,7 @@ function vSettings(){const L=S.lock||{mode:'none'};
     <h2>Оформление</h2>
     <div class="card"><div class="seg" role="group" aria-label="Тема">${[['auto','Как в системе'],['light','Светлая'],['dark','Тёмная']].map(([k,l])=>`<button data-theme-set="${k}" aria-pressed="${THEME===k}">${l}</button>`).join('')}</div></div>
     <h2>Налоги</h2>
-    <div class="card total"><div><div class="label">Я самозанятый</div><div class="note">Напоминать про чек НПД после каждой оплаты</div></div><button class="btn small ${S.npd!==false?'':'ghost'}" data-act="npdToggle">${S.npd!==false?'Включено':'Выключено'}</button></div>
+    <div class="card total"><div><div class="label">Я самозанятый ${hint('npd')}</div><div class="note">Напоминать про чек НПД после каждой оплаты</div></div><button class="btn small ${S.npd!==false?'':'ghost'}" data-act="npdToggle">${S.npd!==false?'Включено':'Выключено'}</button></div>
   </main>`}
 
 /* ---------- блокировка входа: код и биометрия ----------
@@ -1202,6 +1226,57 @@ function vLock(){const L=S.lock;const nm=S.session.mode==='landlord'&&S.user?S.u
     <div class="err lockerr" aria-live="polite">${esc(ui.err||'')}</div>
     <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" data-key="${n}">${n}</button>`).join('')}${L.mode==='bio'?`<button class="key fn" data-key="bio" aria-label="Отпечаток или лицо">${svg('finger')}</button>`:'<span></span>'}<button class="key" data-key="0">0</button><button class="key fn" data-key="del" aria-label="Стереть">⌫</button></div>
     <button class="linkbtn" data-act="forgotPin" style="align-self:center">Забыли код? Войти по СМС</button></div>`}
+
+/* ---------- помощь ----------
+   Статьи — по задачам, а не по экранам: 3–5 шагов. Держать короткими и обновлять вместе с функциями. */
+const ARTICLES=[
+ ['building','Как добавить квартиру',['«Объекты» → «Добавить объект».','Выберите вид (квартира, комната, дом) и тип аренды: долгосрочная или посуточная.','Укажите адрес, площадь и плату. Для долгосрочной — сразу арендатора и даты договора.','Карточка откроется на вкладке «Договор»: там видно, чего не хватает для договора.']],
+ ['doc','Как подготовить договор в Word',['Вкладка «Договор» → «Изменить данные договора».','Заполните стороны, паспорта, кто платит коммунальные платежи, число ключей.','Процент заполненности подскажет, чего не хватает. Пустые места станут линиями для заполнения от руки.','«Скачать договор (Word)» — в файле договор и передаточный акт с описью и показаниями счётчиков.']],
+ ['key','Как пригласить арендатора',['«Договор» → «Пригласить арендатора» → «Скопировать приглашение».','Отправьте текст в мессенджер. В нём ссылка и код из 6 символов.','Арендатор открывает ссылку или вводит код и входит по своему номеру телефона — регистрация не нужна.','Он видит долг, отмечает оплату с чеком, передаёт показания и пишет о поломках.']],
+ ['coin','Как отмечать оплаты',['Вкладка «Платежи» — график по месяцам с долгами.','«Внести оплату» — можно внести часть суммы, остаток останется долгом.','Если арендатор отметил оплату с чеком, нажмите «Проверить»: подтвердите или отклоните.','Сформировали чек в «Моём налоге» — нажмите «Чек НПД выдан» в строке оплаты.']],
+ ['key','Как вести залог',['Карточка «Залог» во вкладке «Платежи».','«Отметить получение залога» в день заезда.','«Удержать» — с причиной: поломка, уборка, долг.','При выезде — «Вернуть» остаток. После этого залог закрыт.']],
+ ['gauge','Счётчики и коммунальные платежи',['«Тарифы» — ваши цены и тип электросчётчика: один, два или три тарифа.','«Внести показания» — или арендатор передаёт их сам с фото, а вы сверяете.','Сумма коммунальных платежей считается по двум последним показаниям.']],
+ ['sofa','Опись и заявки о поломках',['«Опись» — мебель и техника с фото и состоянием. Попадает в передаточный акт.','«Заявки» — поломки от арендатора. Меняйте статус: новая, в работе, готово.','Стоимость ремонта из заявки сама становится расходом.']],
+ ['bed','Посуточная аренда',['«Брони» — календарь занятости. Нажмите на свободный день, чтобы добавить бронь.','Предоплату и доплаты вносите во вкладке «Платежи».','После выезда — «Отметить уборку» со стоимостью.']],
+ ['receipt','Финансы и отчёты',['«Финансы» → выберите месяц, квартал, год или свой период.','Видно доход, расходы и итог по каждому объекту и по категориям расходов.','Агенту: «Собственники» → отчёт собственнику в Word и отметка выплат.']],
+ ['lock','Защита и работа без интернета',['«Настройки» → «Вход в приложение»: код из 4 цифр или отпечаток пальца.','Без интернета приложение работает: всё сохраняется на телефоне.','Чтобы открывать как приложение — в меню браузера «Добавить на главный экран».']]];
+const TENANT_HELP=[['coin','Как оплатить',['Переведите деньги арендодателю как обычно.','Нажмите «Я оплатил», укажите сумму и приложите чек или скриншот перевода.','Когда арендодатель подтвердит, долг исчезнет.']],
+ ['gauge','Как передать показания',['С 15 по 20 число нажмите «Передать показания».','Впишите цифры со счётчиков и приложите фото.']],
+ ['wrench','Если что-то сломалось',['«Сообщить о поломке» — опишите и приложите фото.','Статус заявки виден в «Мои заявки».']]];
+const HINTS={
+ dep:['Залог','Деньги, которые арендатор оставляет на случай поломок и долгов. Отметьте получение, удерживайте суммы с причиной и верните остаток при выезде — так история залога не потеряется.'],
+ npd:['Чек НПД','Если вы самозанятый, на каждую полученную оплату нужно сформировать чек в приложении «Мой налог». Отметка «Чек НПД выдан» помогает не забыть. Если вы не самозанятый, выключите напоминания в Настройках.'],
+ el:['Тип электросчётчика','Однотарифный считает всё одной цифрой. Двухтарифный — днём (Т1) и ночью (Т2) по разным ценам. Трёхтарифный — пик (Т1), ночь (Т2) и полупик (Т3). Тип написан на счётчике или в квитанции; сменить его можно в «Тарифах».'],
+ com:['Комиссия агента','Процент от денег, полученных от арендаторов по объекту. Задаётся у каждого объекта. К выплате собственнику = получено − расходы − комиссия.']};
+const ROADMAP=[['avito','Синхронизация броней с Авито и Суточно','чтобы не было двойных броней'],['nalog','Чеки НПД через «Мой налог» автоматически','без ручного ввода в приложении ФНС'],['remind','Напоминания арендатору в Telegram и СМС','об оплате и показаниях'],['rentup','Повышение платы с выбранной даты','без пересчёта прошлых месяцев'],['photoact','Фотоакт при выезде со сравнением','фото «было» и «стало» рядом'],['excel','Отчёты в Excel и PDF','для бухгалтера и налоговой'],['share','Доступ для семьи или помощника','несколько человек ведут одни объекты'],['backup','Резервная копия и перенос на новый телефон','чтобы данные не потерялись']];
+const CHANGES=[['8 ноября','Заявки о поломках, календарь броней, уборка, отчёт за любой период, собственники и выплаты для агента, работа без интернета'],['8 ноября','Настройки: вход по коду или отпечатку, английский язык'],['8 ноября','Вход по номеру телефона, приглашение арендатора, опись, оплаты частями, залог, чек НПД'],['7 ноября','Договор найма и передаточный акт в Word прямо из карточки']];
+const hint=k=>`<button type="button" class="hint" data-hint="${k}" aria-label="Что это: ${HINTS[k][0]}">?</button>`;
+const helpArticle=([ic,t,steps])=>`<details class="art" data-text="${esc((t+' '+steps.join(' ')).toLowerCase())}"><summary>${ico(ic,'acc','sm')}<span>${t}</span></summary><ol>${steps.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
+function vHelp(){const fb=(S.feedback||[]).slice().reverse();
+  return top('Помощь и идеи',true)+`<main>
+    <div class="f"><label for="help_q" class="sr">Поиск по помощи</label><input id="help_q" type="search" placeholder="Поиск: залог, договор, счётчики…" autocomplete="off"></div>
+    <h2>Как пользоваться</h2>
+    <div class="list arts">${ARTICLES.map(helpArticle).join('')}<div class="row note noart" hidden>Ничего не нашлось. Попробуйте другое слово или напишите нам ниже.</div></div>
+    <h2>Идеи и пожелания</h2>
+    <div class="card"><p>Чего не хватает? Что неудобно? Нашли ошибку? Напишите — мы читаем каждое сообщение и так решаем, что делать дальше.</p><button class="btn wide" data-act="idea">Написать</button>
+      ${fb.length?`<div class="list" style="margin-top:4px">${fb.map(x=>`<div class="row">${ico(x.type==='bug'?'wrench':x.type==='need'?'dots':'sparkle',x.type==='bug'?'bad':'acc','sm')}<div class="main"><div class="t">${esc(x.text)}</div><div class="s">${fdate(x.date)} · ${({idea:'идея',need:'не хватает функции',bug:'ошибка'})[x.type]}</div></div><span class="pill p-ok">Отправлено</span></div>`).join('')}</div>`:''}</div>
+    <h2>Что планируем</h2>
+    <p class="note">Отметьте, что нужно вам, — так мы поймём, с чего начать.</p>
+    <div class="list">${ROADMAP.map(([k,t,d])=>`<div class="row tap" tabindex="0" role="button" aria-pressed="${!!S.votes[k]}" data-vote="${k}"><div class="main"><div class="t">${t}</div><div class="s">${d}</div></div>${S.votes[k]?'<span class="pill p-ok">Нужно мне</span>':'<span class="pill p-mute">Нужно мне?</span>'}</div>`).join('')}</div>
+    <h2>Что нового</h2>
+    <div class="list">${CHANGES.map(([d,t])=>`<div class="row"><div class="main"><div class="t">${d}</div><div class="s">${t}</div></div></div>`).join('')}</div>
+    <h2>О приложении</h2>
+    <div class="card"><dl class="kv"><dt>Версия</dt><dd>0.9 · прототип</dd><dt>Поддержка</dt><dd>чат появится в рабочей версии</dd></dl>
+      <p class="note">Политика обработки персональных данных и условия использования появятся до публикации в RuStore.</p></div>
+    <p class="note">В прототипе сообщения и отметки сохраняются только на этом телефоне. В рабочей версии они будут приходить нам.</p>
+  </main>`}
+function firstSteps(){const L=S.objects.filter(o=>o.type==='long');const firstL=L[0];
+  return[['obj','Добавьте квартиру',S.objects.length>0],['contract','Заполните договор',L.some(o=>contractMissing(o).length===0)],['invite','Пригласите арендатора',S.objects.some(o=>o.invited)],
+    ['meters','Внесите показания счётчиков',S.objects.some(o=>(o.meters||[]).length)],['pay','Отметьте первую оплату',S.objects.some(o=>Object.values(o.payments||{}).some(r=>r.amount>0)||(o.bookings||[]).some(b=>paidOf(b)>0))]]}
+function firstStepsCard(){if(S.help&&S.help.hide)return'';const st=firstSteps();const done=st.filter(x=>x[2]).length;if(done===st.length)return'';
+  return `<div class="card steps"><div class="total"><div><div class="label">Первые шаги</div><div class="t" style="font-weight:600">${done} из ${st.length} готово</div></div><button class="linkbtn" data-act="hideSteps">Скрыть</button></div>
+    <div class="bar"><i style="width:${Math.round(done/st.length*100)}%"></i></div>
+    <div class="steplist">${st.map(([k,t,ok])=>`<button class="step${ok?' done':''}" data-step="${k}" ${ok?'disabled':''}><span class="chk" aria-hidden="true">${ok?'✓':''}</span><span>${t}</span>${ok?'':'<span class="chev" aria-hidden="true">›</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- формы ---------- */
 const f=(id,label,type='text',val='',extra='')=>`<div class="f"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" value="${esc(val)}" ${extra}></div>`;
@@ -1279,6 +1354,11 @@ function sheet(){
     <div class="grid2">${f('b_from','Заезд','date',ui.bookFrom||TODAY,'required')}${f('b_to','Выезд','date',addDays(ui.bookFrom||TODAY,2),'required')}</div>
     <div class="grid2">${f('b_sum','Сумма, ₽','number','','min="0" placeholder="Сутки × цена"')}${f('b_pre','Предоплата, ₽','number','','min="0" placeholder="0"')}</div>`;
   if(s==='repair')h=`<h3>Сообщить о поломке</h3>${f('r_text','Что случилось','text','','required placeholder="Например, течёт кран на кухне"')}${photoField('Фото (по желанию)')}<p class="note">Арендодатель увидит заявку и будет менять её статус: новая, в работе, готово.</p>`;
+  if(s==='hint'){const[t,tx]=HINTS[ui.hintKey];return `<div class="scrim" data-act="close"><div class="sheet" role="dialog" aria-label="${t}" data-stop><h3>${t}</h3><p>${tx}</p><button class="btn wide" data-act="close">Понятно</button></div></div>`}
+  if(s==='idea')h=`<h3>Идея или пожелание</h3>
+    <div class="f"><span class="flab">О чём</span><div class="seg" role="radiogroup">${[['idea','Идея'],['need','Не хватает'],['bug','Ошибка']].map(([k,l],i)=>`<label class="segopt"><input type="radio" class="sr" name="i_type" value="${k}" ${i===0?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
+    <div class="f"><label for="i_text">Расскажите подробнее</label><textarea id="i_text" name="i_text" rows="4" placeholder="Например, хочу видеть, сколько дней квартира простаивала"></textarea></div>
+    ${f('i_contact','Как с вами связаться (по желанию)','text',S.user?fmtPhone(S.user.phone):'')}`;
   if(s==='invite')return `<div class="scrim" data-act="close"><div class="sheet" role="dialog" aria-label="Приглашение" data-stop>
     <h3>Пригласить арендатора</h3><p class="note">Отправьте арендатору код или ссылку. Он войдёт по своему номеру телефона и сразу попадёт в эту квартиру — без регистрации.</p>
     <div class="invcode">${o.invite}</div>
@@ -1286,7 +1366,7 @@ function sheet(){
     <button class="btn ghost wide" data-act="close">Готово</button></div></div>`;
   return `<div class="scrim" data-act="close"><form class="sheet" role="dialog" data-form="${s}" data-stop novalidate>${h}
     ${ui.err?`<div class="err">${esc(ui.err)}</div>`:''}
-    <div class="grid2"><button type="button" class="btn ghost" data-act="close">Отмена</button><button class="btn" type="submit">${s==='pinSet'?'Сохранить код':s==='viewMeter'||s==='viewClaim'?'Подтвердить':s==='addMeterTenant'||s==='claim'?'Отправить':s==='payIn'?'Внести':'Сохранить'}</button></div></form></div>`;
+    <div class="grid2"><button type="button" class="btn ghost" data-act="close">Отмена</button><button class="btn" type="submit">${s==='idea'?'Отправить':s==='pinSet'?'Сохранить код':s==='viewMeter'||s==='viewClaim'?'Подтвердить':s==='addMeterTenant'||s==='claim'?'Отправить':s==='payIn'?'Внести':'Сохранить'}</button></div></form></div>`;
 }
 
 function submit(name,fd){
@@ -1326,6 +1406,7 @@ function submit(name,fd){
     toast(changed?'Показания исправлены и приняты':'Показания приняты');return;
   }
   if(name==='contract')return contractSubmit(o,g);
+  if(name==='idea'){const t=(g('i_text')||'').trim();if(t.length<3)return'Напишите хотя бы пару слов.';(S.feedback=S.feedback||[]).push({id:uid(),date:TODAY,type:g('i_type')||'idea',text:t,contact:g('i_contact')||'',from:S.session&&S.session.mode});toast('Спасибо! Сообщение сохранено');return}
   if(name==='pinSet'){const a=(g('k_1')||'').replace(/\D/g,''),b=(g('k_2')||'').replace(/\D/g,'');if(a.length!==4)return'Код — ровно 4 цифры.';if(a!==b)return'Коды не совпадают.';if(/^(\d)\1{3}$/.test(a)||'0123456789'.includes(a))return'Слишком простой код. Не используйте 1111 или 1234.';
     const after=ui.lockAfter;S.lock={...(S.lock||{}),pin:a,mode:after==='bio'?(S.lock&&S.lock.mode)||'none':after||(S.lock&&S.lock.mode)||'pin'};ui.lockAfter=null;
     if(after==='bio')setTimeout(enableBio,350);else toast(after==='pin'?'Вход по коду включён':'Код изменён');return}
@@ -1473,6 +1554,7 @@ Object.assign(EN,{
 'По объектам':'By property','Доход учитывает полученные оплаты; посуточные брони считаются по дате заезда.':'Income counts received payments; short-term bookings count by check-in date.','Комиссия агента считается от полученного дохода по каждому объекту. Отчёт собственнику появится в следующей версии.':'Agent commission is calculated from income received per property. Owner reports come in the next version.',
 'Не хватило места в браузере: удалите старые фото или верните примеры':'Not enough browser storage: delete old photos or restore sample data'});
 
+Object.assign(EN,{"Первые шаги": "First steps", "Скрыть": "Hide", "Добавьте квартиру": "Add a property", "Заполните договор": "Complete a lease", "Пригласите арендатора": "Invite a tenant", "Внесите показания счётчиков": "Add meter readings", "Отметьте первую оплату": "Record the first payment", "Помощь и идеи": "Help & ideas", "как пользоваться · пожелания · что нового": "how to use · feedback · what’s new", "Поиск по помощи": "Search help", "Поиск: залог, договор, счётчики…": "Search: deposit, lease, meters…", "Как пользоваться": "How to use", "Ничего не нашлось. Попробуйте другое слово или напишите нам ниже.": "Nothing found. Try another word or write to us below.", "Идеи и пожелания": "Ideas & feedback", "Чего не хватает? Что неудобно? Нашли ошибку? Напишите — мы читаем каждое сообщение и так решаем, что делать дальше.": "Missing something? Something awkward? Found a bug? Write to us — we read every message and use them to decide what to build next.", "Написать": "Write", "Отправлено": "Sent", "Что планируем": "What’s planned", "Отметьте, что нужно вам, — так мы поймём, с чего начать.": "Mark what you need so we know where to start.", "Нужно мне": "I need this", "Нужно мне?": "Need this?", "Отмечено: нужно вам": "Marked as needed", "Отметка снята": "Mark removed", "Что нового": "What’s new", "О приложении": "About", "Версия": "Version", "Поддержка": "Support", "чат появится в рабочей версии": "chat comes in the real app", "Политика обработки персональных данных и условия использования появятся до публикации в RuStore.": "The privacy policy and terms of use will be added before the RuStore release.", "В прототипе сообщения и отметки сохраняются только на этом телефоне. В рабочей версии они будут приходить нам.": "In the prototype, messages and marks are saved on this phone only. In the real app they will reach us.", "Идея или пожелание": "Idea or request", "О чём": "Topic", "Идея": "Idea", "Не хватает": "Missing", "Ошибка": "Bug", "Расскажите подробнее": "Tell us more", "Например, хочу видеть, сколько дней квартира простаивала": "E.g. I want to see how many days the flat stood empty", "Как с вами связаться (по желанию)": "How to reach you (optional)", "Напишите хотя бы пару слов.": "Write at least a few words.", "Спасибо! Сообщение сохранено": "Thank you! Message saved", "Идея или проблема? Напишите": "Idea or problem? Write to us", "Понятно": "Got it", "Первые шаги скрыты. Помощь — в Профиле": "First steps hidden. Help is in Profile", "Как добавить квартиру": "How to add a property", "Как подготовить договор в Word": "How to prepare a lease in Word", "Как пригласить арендатора": "How to invite a tenant", "Как отмечать оплаты": "How to record payments", "Как вести залог": "How to manage a deposit", "Счётчики и коммунальные платежи": "Meters and utility bills", "Опись и заявки о поломках": "Inventory and repair requests", "Посуточная аренда": "Short-term rentals", "Финансы и отчёты": "Finance and reports", "Защита и работа без интернета": "Security and offline use", "Как оплатить": "How to pay", "Как передать показания": "How to submit readings", "Если что-то сломалось": "If something breaks", "«Объекты» → «Добавить объект».": "Properties → Add property.", "Выберите вид (квартира, комната, дом) и тип аренды: долгосрочная или посуточная.": "Choose the type (flat, room, house) and rental type: long-term or short-term.", "Укажите адрес, площадь и плату. Для долгосрочной — сразу арендатора и даты договора.": "Enter the address, area and rent. For long-term, also the tenant and lease dates.", "Карточка откроется на вкладке «Договор»: там видно, чего не хватает для договора.": "The card opens on the Lease tab, which shows what the lease still needs.", "Вкладка «Договор» → «Изменить данные договора».": "Lease tab → Edit lease details.", "Заполните стороны, паспорта, кто платит коммунальные платежи, число ключей.": "Fill in the parties, passports, who pays utility bills and the number of keys.", "Процент заполненности подскажет, чего не хватает. Пустые места станут линиями для заполнения от руки.": "The completion percentage shows what’s missing. Empty fields become blank lines to fill in by hand.", "«Скачать договор (Word)» — в файле договор и передаточный акт с описью и показаниями счётчиков.": "Download lease (Word) — the file contains the lease and the handover act with the inventory and meter readings.", "«Договор» → «Пригласить арендатора» → «Скопировать приглашение».": "Lease → Invite tenant → Copy invitation.", "Отправьте текст в мессенджер. В нём ссылка и код из 6 символов.": "Send the text in a messenger. It has a link and a 6-character code.", "Арендатор открывает ссылку или вводит код и входит по своему номеру телефона — регистрация не нужна.": "The tenant opens the link or enters the code and signs in with their phone number — no sign-up.", "Он видит долг, отмечает оплату с чеком, передаёт показания и пишет о поломках.": "They see what’s due, mark payments with a receipt, submit readings and report problems.", "Вкладка «Платежи» — график по месяцам с долгами.": "The Payments tab shows the monthly schedule with debts.", "«Внести оплату» — можно внести часть суммы, остаток останется долгом.": "Add payment — you can record part of the amount; the rest stays as debt.", "Если арендатор отметил оплату с чеком, нажмите «Проверить»: подтвердите или отклоните.": "If the tenant marked a payment with a receipt, tap Review: confirm or reject.", "Сформировали чек в «Моём налоге» — нажмите «Чек НПД выдан» в строке оплаты.": "Issued a receipt in “Мой налог”? Tap “Tax receipt issued” in the payment row.", "Карточка «Залог» во вкладке «Платежи».": "The Deposit card is on the Payments tab.", "«Отметить получение залога» в день заезда.": "Mark the deposit received on move-in day.", "«Удержать» — с причиной: поломка, уборка, долг.": "Withhold — with a reason: damage, cleaning, debt.", "При выезде — «Вернуть» остаток. После этого залог закрыт.": "At move-out, refund the balance. Then the deposit is closed.", "«Тарифы» — ваши цены и тип электросчётчика: один, два или три тарифа.": "Rates — your prices and electricity meter type: one, two or three rates.", "«Внести показания» — или арендатор передаёт их сам с фото, а вы сверяете.": "Add readings — or the tenant submits them with a photo and you check.", "Сумма коммунальных платежей считается по двум последним показаниям.": "Utility bills are calculated from the last two readings.", "«Опись» — мебель и техника с фото и состоянием. Попадает в передаточный акт.": "Inventory — furniture and appliances with photos and condition. Goes into the handover act.", "«Заявки» — поломки от арендатора. Меняйте статус: новая, в работе, готово.": "Requests — problems reported by the tenant. Change the status: new, in progress, done.", "Стоимость ремонта из заявки сама становится расходом.": "The repair cost from a request becomes an expense automatically.", "«Брони» — календарь занятости. Нажмите на свободный день, чтобы добавить бронь.": "Bookings — an occupancy calendar. Tap a free day to add a booking.", "Предоплату и доплаты вносите во вкладке «Платежи».": "Record prepayments and top-ups on the Payments tab.", "После выезда — «Отметить уборку» со стоимостью.": "After check-out — Mark cleaned with the cost.", "«Финансы» → выберите месяц, квартал, год или свой период.": "Finance → choose a month, quarter, year or custom period.", "Видно доход, расходы и итог по каждому объекту и по категориям расходов.": "You see income, expenses and the total per property and per expense category.", "Агенту: «Собственники» → отчёт собственнику в Word и отметка выплат.": "Agents: Owners → owner report in Word and payout records.", "«Настройки» → «Вход в приложение»: код из 4 цифр или отпечаток пальца.": "Settings → App sign-in: a 4-digit code or fingerprint.", "Без интернета приложение работает: всё сохраняется на телефоне.": "The app works offline: everything is saved on the phone.", "Чтобы открывать как приложение — в меню браузера «Добавить на главный экран».": "To open it like an app, choose “Add to Home screen” in the browser menu.", "Переведите деньги арендодателю как обычно.": "Transfer the money to your landlord as usual.", "Нажмите «Я оплатил», укажите сумму и приложите чек или скриншот перевода.": "Tap “I’ve paid”, enter the amount and attach a receipt or transfer screenshot.", "Когда арендодатель подтвердит, долг исчезнет.": "Once the landlord confirms, the debt disappears.", "С 15 по 20 число нажмите «Передать показания».": "Between the 15th and 20th, tap “Submit meter readings”.", "Впишите цифры со счётчиков и приложите фото.": "Enter the meter numbers and attach a photo.", "«Сообщить о поломке» — опишите и приложите фото.": "Report a problem — describe it and attach a photo.", "Статус заявки виден в «Мои заявки».": "The request status is shown in My requests.", "Тип электросчётчика": "Electricity meter type", "Деньги, которые арендатор оставляет на случай поломок и долгов. Отметьте получение, удерживайте суммы с причиной и верните остаток при выезде — так история залога не потеряется.": "Money the tenant leaves to cover damage and debts. Mark it received, withhold amounts with a reason and refund the balance at move-out — so the deposit history is never lost.", "Если вы самозанятый, на каждую полученную оплату нужно сформировать чек в приложении «Мой налог». Отметка «Чек НПД выдан» помогает не забыть. Если вы не самозанятый, выключите напоминания в Настройках.": "If you’re self-employed, you must issue a receipt in the “Мой налог” app for each payment received. The “Tax receipt issued” mark helps you not forget. If you’re not self-employed, turn the reminders off in Settings.", "Однотарифный считает всё одной цифрой. Двухтарифный — днём (Т1) и ночью (Т2) по разным ценам. Трёхтарифный — пик (Т1), ночь (Т2) и полупик (Т3). Тип написан на счётчике или в квитанции; сменить его можно в «Тарифах».": "A single-rate meter counts everything as one number. Two-rate: day (T1) and night (T2) at different prices. Three-rate: peak (T1), night (T2) and semi-peak (T3). The type is shown on the meter or the bill; change it in Rates.", "Процент от денег, полученных от арендаторов по объекту. Задаётся у каждого объекта. К выплате собственнику = получено − расходы − комиссия.": "A percentage of money received from tenants per property, set for each property. Due to the owner = received − expenses − commission.", "Синхронизация броней с Авито и Суточно": "Booking sync with Avito and Sutochno", "чтобы не было двойных броней": "so there are no double bookings", "Напоминания арендатору в Telegram и СМС": "Tenant reminders via Telegram and SMS", "об оплате и показаниях": "about payments and readings", "Повышение платы с выбранной даты": "Rent increase from a chosen date", "без пересчёта прошлых месяцев": "without recalculating past months", "Фотоакт при выезде со сравнением": "Move-out photo report with comparison", "фото «было» и «стало» рядом": "“before” and “after” photos side by side", "Отчёты в Excel и PDF": "Reports in Excel and PDF", "для бухгалтера и налоговой": "for your accountant and the tax office", "Доступ для семьи или помощника": "Access for family or an assistant", "несколько человек ведут одни объекты": "several people manage the same properties", "Резервная копия и перенос на новый телефон": "Backup and transfer to a new phone", "чтобы данные не потерялись": "so data is never lost", "без ручного ввода в приложении ФНС": "without typing into the tax service app", "Заявки о поломках, календарь броней, уборка, отчёт за любой период, собственники и выплаты для агента, работа без интернета": "Repair requests, booking calendar, cleaning, reports for any period, owners and payouts for agents, offline mode", "Настройки: вход по коду или отпечатку, английский язык": "Settings: sign-in by code or fingerprint, English language", "Вход по номеру телефона, приглашение арендатора, опись, оплаты частями, залог, чек НПД": "Phone sign-in, tenant invitations, inventory, partial payments, deposit, tax receipts", "Договор найма и передаточный акт в Word прямо из карточки": "Lease and handover act in Word straight from the property card", "идея": "idea", "не хватает функции": "missing feature", "ошибка": "bug", "однотарифный": "single-rate", "двухтарифный (т1, т2)": "two-rate (T1, T2)", "трёхтарифный (т1, т2, т3)": "three-rate (T1, T2, T3)"});
 const enMonth=s=>s;const ord=n=>n+(n%10===1&&n%100!==11?'st':n%10===2&&n%100!==12?'nd':n%10===3&&n%100!==13?'rd':'th');
 const pl=(n,one,many)=>n+' '+(Number(n)===1?one:many);
 const FIELD_EN={'город':'city','дата договора':'lease date','адрес':'address','площадь, м²':'area','комнат':'rooms','начало найма':'lease start','конец найма':'lease end','плата в месяц, ₽':'monthly rent','оплата до … числа':'payment day','залог, ₽':'deposit','фио':'full name','дата рождения':'date of birth','телефон':'phone','паспорт (серия, номер)':'passport','кем и когда выдан':'passport issued by','адрес регистрации':'registered address'};
@@ -1550,6 +1632,9 @@ EN_RE.push(
  [/^вход: без защиты$/,'sign-in: none'],[/^вход: код$/,'sign-in: code'],[/^вход: отпечаток или лицо$/,'sign-in: biometrics'],[/^тема$/,'theme'],
  [/^Последние показания$/,'Latest readings'],[/^Электричество, кВт·ч$/,'Electricity, kWh']);
 
+EN_RE.unshift([/^за (\d+) (месяц|месяца|месяцев), первый срок — (.+)$/,(m,n,x,d)=>`for ${pl(n,'month','months')}, first due ${d}`],
+ [/^(\d+) из (\d+) готово$/,'$1 of $2 done'],[/^Что это: (.+)$/,(m,a)=>'What is: '+trText(a)],[/^Электросчётчик: (.+)$/,(m,a)=>'Electricity meter: '+trText(a)],
+ [/^(\d+) (января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)$/,(m,d,mo)=>d+' '+['January','February','March','April','May','June','July','August','September','October','November','December'][['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'].indexOf(mo)]]);
 function trText(t){if(LANG!=='en'||!t||!/[А-Яа-яЁё]/.test(t))return t;const k=t.trim().replace(/\s+/g,' ');let r=EN[k];
   if(r==null&&k.includes(' · ')){const parts=k.split(' · ').map(x=>x&&/[А-Яа-яЁё]/.test(x)?trText(x):x);const j=parts.join(' · ');if(j!==k)r=j}
   if(r==null)for(const[re,fn]of EN_RE){const m=k.match(re);if(m){r=typeof fn==='function'?fn(...m):k.replace(re,fn);break}}
@@ -1566,7 +1651,7 @@ const root=document.getElementById('root');
    Экран перерисовывается целиком, поэтому анимации запускаются только когда что-то сменилось:
    экран, вкладка, открыта или закрыта шторка. Отметка оплаты и т.п. просто обновляет данные без «прыжков». */
 const RM=matchMedia('(prefers-reduced-motion: reduce)');
-const DEPTH={home:0,objects:0,finance:0,profile:0,object:1,tenant:2,settings:1,owner:1};
+const DEPTH={home:0,objects:0,finance:0,profile:0,object:1,tenant:2,settings:1,owner:1,help:1};
 const TABS=['contract','book','pay','meters','exp','inv','req'];
 const M={key:null,view:null,tab:null,sheet:null,ind:{},nav:false,auth:null};
 function stagger(els,dx,dy,from=0){els.forEach((el,n)=>{el.classList.add('a');el.style.setProperty('--i',from+n);el.style.setProperty('--dx',dx);el.style.setProperty('--dy',dy)})}
@@ -1623,14 +1708,14 @@ function render(){
   if(S.session.mode==='tenant'){const o=S.objects.find(x=>x.id===S.session.objId);if(!o){S.session=null;save();return render()}
     ui.objId=o.id;ui.view='tenant';root.innerHTML=`<div class="app">${vTenant(true)}</div>${ui.sheet?sheet():''}`}
   else{if(!S.role)S.role='private';if(ui.view==='tenant'&&!S.objects.some(x=>x.id===ui.objId))ui.view='home';
-    const v={home:vHome,objects:vObjects,object:vObject,tenant:()=>vTenant(false),finance:vFinance,profile:vProfile,settings:vSettings,owner:vOwner}[ui.view]||vHome;
+    const v={home:vHome,objects:vObjects,object:vObject,tenant:()=>vTenant(false),finance:vFinance,profile:vProfile,settings:vSettings,owner:vOwner,help:vHelp}[ui.view]||vHome;
     root.innerHTML=`<div class="app">${v()}</div>${nav()}${ui.sheet?sheet():''}`}
   if(ghost){document.body.appendChild(ghost);setTimeout(()=>ghost.remove(),320)}
   motion();translate(root);
   if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus({preventScroll:true})}
 }
 function onTap(e){
-  const t=e.target.closest('[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-payin],[data-bpayin],[data-claimview],[data-npd],[data-bnpd],[data-inv],[data-claim],[data-auth],[data-theme-set],[data-lang],[data-lock],[data-key],[data-req],[data-clean],[data-day],[data-calnav],[data-finmode],[data-finnav],[data-owner]');
+  const t=e.target.closest('[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-payin],[data-bpayin],[data-claimview],[data-npd],[data-bnpd],[data-inv],[data-claim],[data-auth],[data-theme-set],[data-lang],[data-lock],[data-key],[data-req],[data-clean],[data-day],[data-calnav],[data-finmode],[data-finnav],[data-owner],[data-hint],[data-vote],[data-step]');
   if(!t){return}
   if(t.dataset.act==='close'&&t.classList.contains('scrim')&&e.target!==t)return;
   const d=t.dataset;const o=S.objects.find(x=>x.id===ui.objId);
@@ -1656,6 +1741,12 @@ function onTap(e){
   else if(d.claim){ui.payRef={k:d.claim};ui.sheet='claim';ui.err='';ui.photo=null}
   else if(d.npd){const r=o.payments[d.npd];r.npd=!r.npd;save();toast(r.npd?'Чек НПД отмечен':'Отметка о чеке снята')}
   else if(d.bnpd){const b=o.bookings.find(x=>x.id===d.bnpd);b.npd=!b.npd;save();toast(b.npd?'Чек НПД отмечен':'Отметка о чеке снята')}
+  else if(d.hint){ui.hintKey=d.hint;ui.sheet='hint';ui.err=''}
+  else if(d.vote){S.votes[d.vote]=!S.votes[d.vote];save();toast(S.votes[d.vote]?'Отмечено: нужно вам':'Отметка снята')}
+  else if(d.step){const L=S.objects.find(x=>x.type==='long');const go=(id,tab)=>{ui.objId=id;ui.view='object';ui.tab=tab;window.scrollTo(0,0)};
+    if(d.step==='obj'){ui.view='objects';ui.sheet='addObj'}else if(!L){ui.view='objects';ui.sheet='addObj'}
+    else if(d.step==='contract')go(L.id,'contract');else if(d.step==='invite'){go(L.id,'contract');L.invited=true;ui.sheet='invite';save()}
+    else if(d.step==='meters')go(L.id,'meters');else go(L.id,'pay')}
   else if(d.req){const r=o.requests.find(x=>x.id===d.req);ui.reqId=d.req;ui.photo=r&&r.photo||null;ui.sheet='req';ui.err=''}
   else if(d.clean){ui.cleanId=d.clean;ui.sheet='clean';ui.err=''}
   else if(d.calnav){ui.calM=mkey(addMonths((ui.calM||mkey(TODAY))+'-01',Number(d.calnav)))}
@@ -1666,8 +1757,11 @@ function onTap(e){
   else if(d.inv){const x=o.inventory.find(y=>y.id===d.inv);ui.invId=d.inv;ui.photo=x&&x.photo||null;ui.sheet='inv';ui.err=''}
   else if(d.act){
     const a=d.act;
-    if(a==='back'){if(ui.view==='tenant')ui.view='object';else if(ui.view==='settings')ui.view='profile';else if(ui.view==='owner')ui.view='finance';else{ui.view='objects'}}
+    if(a==='back'){if(ui.view==='tenant')ui.view='object';else if(ui.view==='settings'||ui.view==='help')ui.view='profile';else if(ui.view==='owner')ui.view='finance';else{ui.view='objects'}}
     else if(a==='settings'){ui.view='settings';window.scrollTo(0,0)}
+    else if(a==='help'){ui.view='help';window.scrollTo(0,0)}
+    else if(a==='idea'){ui.sheet='idea';ui.err=''}
+    else if(a==='hideSteps'){S.help.hide=true;save();toast('Первые шаги скрыты. Помощь — в Профиле')}
     else if(a==='pinSet'){ui.lockAfter=null;ui.sheet='pinSet';ui.err=''}
     else if(a==='bioOk'){unlock();return}
     else if(a==='forgotPin'){ui.locked=false;ui.pin='';ui.err='';S.session=null;save();ui.auth.step='phone';ui.auth.mode='landlord';M.auth=null}
@@ -1675,6 +1769,7 @@ function onTap(e){
     else if(a==='tenantView'){ui.view='tenant';window.scrollTo(0,0)}
     else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
     else if(a==='docx'){downloadContract(o);toast('Договор скачан')}
+    else if(a==='invite'){o.invited=true;ui.sheet='invite';ui.err='';save()}
     else if(a==='copyInvite'){const link=location.origin+location.pathname+'?invite='+o.invite;const txt=`Приглашение в «Учёт аренды»: ${link} — или введите код ${o.invite} на первом экране.`;
       (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Приглашение скопировано'),()=>toast('Код приглашения: '+o.invite))}
     else if(a==='logout'){S.session=null;ui.sheet=null;ui.view='home';ui.auth={step:'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:'',sent:0,name:''};M.auth=null;save();window.scrollTo(0,0)}
@@ -1694,7 +1789,7 @@ function onTap(e){
 }
 /* Нажатие пальцем: подсвечиваем элемент сразу, а действие выполняем через ~0,1 с,
    иначе экран сменяется раньше, чем глаз успевает заметить подсветку */
-const TAP='.row.tap,.obj,.btn,.back,.role,.chip,.tab,.seg button,.kind,.nav button,.pill.npd,.linkbtn,.key,.cd,.segopt';
+const TAP='.row.tap,.obj,.btn,.back,.role,.chip,.tab,.seg button,.kind,.nav button,.pill.npd,.linkbtn,.key,.cd,.segopt,.step,.hint';
 let pressedEl=null,lastPT='mouse';
 root.addEventListener('pointerdown',e=>{lastPT=e.pointerType;const t=e.target.closest(TAP);if(!t)return;pressedEl=t;t.classList.add('pressed')},{passive:true});
 const unpress=()=>{const el=pressedEl;pressedEl=null;if(el)setTimeout(()=>el.classList.remove('pressed'),lastPT==='touch'?160:0)};
@@ -1712,6 +1807,7 @@ root.addEventListener('submit',e=>{
   ui.sheet=null;ui.err='';if(!save())toast('Не хватило места в браузере: удалите старые фото или верните примеры');render();
 });
 root.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='help_q'){const q=t.value.trim().toLowerCase();let n=0;root.querySelectorAll('.arts .art').forEach(a=>{const ok=!q||a.dataset.text.includes(q)||trText(a.querySelector('summary span').textContent).toLowerCase().includes(q);a.hidden=!ok;if(ok)n++});const no=root.querySelector('.noart');if(no)no.hidden=n>0;return}
   if(t.id==='a_phone'){const v=maskPhone(t.value);if(t.value!==v)t.value=v;return}
   if(t.id==='k_1'||t.id==='k_2'){t.value=t.value.replace(/\D/g,'').slice(0,4);return}
   if(t.id==='a_code'){t.value=t.value.replace(/\D/g,'').slice(0,4);if(t.value.length===4)t.form.requestSubmit();return}
