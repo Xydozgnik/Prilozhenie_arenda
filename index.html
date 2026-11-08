@@ -322,6 +322,9 @@ html{-webkit-tap-highlight-color:transparent}
 @media (prefers-reduced-motion:no-preference){
   /* появление блоков: класс .a ставит скрипт только при смене экрана или вкладки */
   .a{animation:enter .55s var(--glide) both;animation-delay:calc(var(--i,0) * 45ms)}
+/* тёмно-зелёные кнопки: полупрозрачными они светлеют на фоне и потом «темнеют» — проявляем их быстро, дальше только движение */
+.btn:not(.ghost).a{animation-name:enterSolid}
+@keyframes enterSolid{0%{opacity:0;transform:translate(var(--dx,0),var(--dy,14px)) scale(var(--s,1))}18%{opacity:1}100%{opacity:1;transform:none}}
   @keyframes enter{from{opacity:0;transform:translate(var(--dx,0),var(--dy,14px)) scale(var(--s,1))}}
   .pop-in{animation:popin .5s var(--spring) both}
   @keyframes popin{from{opacity:0;transform:scale(.6)}}
