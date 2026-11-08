@@ -215,6 +215,15 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 /* Отклик на нажатие */
 .btn,.role,.back,.tab,.seg button{transition:transform .35s var(--spring),background-color .2s,color .3s}
 .obj,.row.tap,.ut{transition:transform .35s var(--spring),background-color .2s,border-color .2s}
+/* Нажатие (палец или мышь): та же подсветка, что при наведении, только чуть насыщеннее и без задержки */
+html{-webkit-tap-highlight-color:transparent}
+.pressed{transition:transform .35s var(--spring),background-color 0s,border-color 0s,color 0s,filter 0s}
+.row.tap.pressed{background:color-mix(in srgb,var(--accent-soft) 90%,transparent)}
+.obj.pressed,.btn.ghost.pressed,.back.pressed,.role.pressed,.chip:not([aria-pressed="true"]).pressed{background:linear-gradient(color-mix(in srgb,var(--accent-soft) 80%,transparent),color-mix(in srgb,var(--accent-soft) 80%,transparent)),var(--card);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.kind.pressed{border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+.btn:not(.ghost).pressed{filter:brightness(1.2)}
+.tab.pressed,.seg button.pressed{color:var(--ink)}
+.nav button.pressed{color:#fff}
 /* Белые кнопки — единый стиль (матовая карточка с тенью); при наведении — тот же зелёный оттенок и кромка, что у строк и карточек */
 @media (hover:hover){
   .btn:not(.ghost):hover{filter:brightness(1.12)}
@@ -768,7 +777,7 @@ function render(){
   motion();
   if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus({preventScroll:true})}
 }
-root.addEventListener('click',e=>{
+function onTap(e){
   const t=e.target.closest('[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-pay],[data-confirm],[data-bpay],[data-claim],[data-theme-set]');
   if(!t){return}
   if(t.dataset.act==='close'&&t.classList.contains('scrim')&&e.target!==t)return;
@@ -794,7 +803,15 @@ root.addEventListener('click',e=>{
     else {ui.sheet=a;ui.err='';ui.photo=null}
   }
   render();
-});
+}
+/* Нажатие пальцем: подсвечиваем элемент сразу, а действие выполняем через ~0,1 с,
+   иначе экран сменяется раньше, чем глаз успевает заметить подсветку */
+const TAP='.row.tap,.obj,.btn,.back,.role,.chip,.tab,.seg button,.kind,.nav button';
+let pressedEl=null,lastPT='mouse';
+root.addEventListener('pointerdown',e=>{lastPT=e.pointerType;const t=e.target.closest(TAP);if(!t)return;pressedEl=t;t.classList.add('pressed')},{passive:true});
+const unpress=()=>{const el=pressedEl;pressedEl=null;if(el)setTimeout(()=>el.classList.remove('pressed'),lastPT==='touch'?160:0)};
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,unpress,{passive:true}));
+root.addEventListener('click',e=>{if(lastPT==='touch'&&e.target.closest(TAP)&&!RM.matches)setTimeout(()=>onTap(e),110);else onTap(e)});
 /* после появления снимаем класс, чтобы анимация не перебивала отклик на нажатие */
 root.addEventListener('animationend',e=>{if(e.animationName==='enter')e.target.classList.remove('a')});
 root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open],[data-meter]')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&ui.sheet){ui.sheet=null;ui.err='';render()}});
