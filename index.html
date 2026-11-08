@@ -86,6 +86,10 @@ main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px
 .sum3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 .sum3 .card{padding:12px 14px}
 .sum3 .wide{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+/* зелёный блок с графиком: всегда подпись → сумма → график во всю ширину → строка итогов, чтобы высота не зависела от длины суммы */
+.sum3 .wide.stack{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:0}
+.stack .spark,.stack .spark-ph{flex:none;width:100%;min-width:0;height:52px;margin:6px 0 8px;align-self:stretch}
+.stack .bar{margin-top:10px}
 .bar{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:8px}
 .bar i{display:block;height:100%;background:var(--lime);border-radius:999px}
 h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);margin:8px 2px -4px}
@@ -1048,7 +1052,7 @@ function vHome(){
   const k=mkey(TODAY);
   return top('@brand')+`<main>
     <div class="sum3">
-      <div class="card wide hero"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div>${spark(cumul([-7,-6,-5,-4,-3,-2,-1,0].map(i=>monthInc(mkey(addMonths(TODAY.slice(0,8)+'01',i))))))}<div class="note num">из ${rub(m.expected)} ожидаемых</div>
+      <div class="card wide hero stack"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div>${spark(cumul([-7,-6,-5,-4,-3,-2,-1,0].map(i=>monthInc(mkey(addMonths(TODAY.slice(0,8)+'01',i))))))||'<div class="spark-ph" aria-hidden="true"></div>'}<div class="note num">из ${rub(m.expected)} ожидаемых</div>
         <div class="bar" style="width:100%" role="img" aria-label="Получено ${pct}%"><i style="width:${pct}%"></i></div></div>
       <div class="card"><div class="label">Долги</div><div class="big num" style="font-size:20px;color:${m.totalDebt?'var(--bad)':'inherit'}">${rub(m.totalDebt)}</div></div>
       <div class="card"><div class="label">Объектов</div><div class="big num" style="font-size:20px">${S.objects.length}</div></div>
@@ -1237,7 +1241,7 @@ function vFinance(){
   return top('Финансы')+`<main>
     <div class="seg four" role="group" aria-label="Период">${[['month','Месяц'],['quarter','Квартал'],['year','Год'],['custom','Период']].map(([k,l])=>`<button data-finmode="${k}" aria-pressed="${F.mode===k}">${l}</button>`).join('')}</div>
     ${F.mode==='custom'?`<div class="card grid2">${f('f_from','С','date',F.from)}${f('f_to','По','date',F.to)}</div>`:`<div class="calhead"><button class="back" data-finnav="-1" aria-label="Раньше">‹</button><div class="calt"><div class="t" style="text-transform:capitalize">${Rg.label}</div></div><button class="back" data-finnav="1" aria-label="Позже">›</button></div>`}
-    <div class="sum3"><div class="card wide hero"><div><div class="label">Чистый доход${F.mode==='custom'?'':' · '+Rg.label}</div><div class="big num">${rub(tot.net)}</div></div>${sp}<div class="note num">доход ${rub(tot.inc)} · расходы ${rub(tot.exp)}${ag?' · комиссия '+rub(tot.com):''}</div></div></div>
+    <div class="sum3"><div class="card wide hero stack"><div><div class="label">Чистый доход${F.mode==='custom'?'':' · '+Rg.label}</div><div class="big num">${rub(tot.net)}</div></div>${sp||'<div class="spark-ph" aria-hidden="true"></div>'}<div class="note num">доход ${rub(tot.inc)} · расходы ${rub(tot.exp)}${ag?'<br>комиссия агента '+rub(tot.com):''}</div></div></div>
     ${(()=>{const v=vacancyFor(Rg),fc=forecast3();const tm=taxMode(),base=ag?tot.com:tot.inc,tx=taxEst(base,tm);
       return `<div class="grid2 fin2"><div class="card"><div class="label">Простой за период</div><div class="big num" style="font-size:20px">${!S.objects.length?'—':v.months||v.nights?`${v.months?v.months+' '+plural(v.months,['мес.','мес.','мес.']):''}${v.months&&v.nights?' · ':''}${v.nights?v.nights+' '+plural(v.nights,['ночь','ночи','ночей']):''}`:'Без простоя'}</div><div class="note">${!S.objects.length?'добавьте объект, чтобы считать простой':v.lost?'недополучено около '+rub(v.lost):'все объекты были сданы'}</div></div>
       <div class="card"><div class="label">Прогноз на 3 месяца</div><div class="big num" style="font-size:20px">${rub(fc.sum)}</div><div class="note">${fc.parts.map(([k,x])=>`${MON_S[Number(k.slice(5))-1]} ${rub(x)}`).join('<br>')}</div></div></div>
@@ -1859,7 +1863,7 @@ EN_RE.unshift([/^Выставить арендатору (.+)$/,'Bill tenant $1'
  [/^(\d+) (ночь|ночи|ночей)$/,(m,n)=>pl(n,'night','nights')],[/^(\d+) мес\.$/,'$1 mo.'],[/^недополучено около (.+)$/,'about $1 missed'],
  [/^(НПД|НДФЛ|ИП) (\d+%) от дохода (.+)$/,(m,t,p,s)=>`${TAXEN(t)} ${p} of income ${s}`],[/^Налог: (НПД|НДФЛ|ИП) (\d+%)$/,(m,t,p)=>`Tax: ${TAXEN(t)} ${p}`],
  [/^В файле (\d+) (объект|объекта|объектов)(?:, копия от (.+))?\.$/,(m,n,x,d)=>`The file has ${pl(n,'property','properties')}${d?', backup from '+d:''}.`],
- [/^Последняя копия: (.+)$/,'Last backup: $1'],[/^заполнено (\d+) из (\d+) — для договоров и выплат$/,'$1 of $2 filled — for leases and payouts'],[/^сейчас: (.+)$/,'now: $1'],[/^счёт (.+)$/,'account $1'],[/^карта (.+)$/,'card $1']);
+ [/^комиссия агента (.+)$/,'agent commission $1'],[/^Последняя копия: (.+)$/,'Last backup: $1'],[/^заполнено (\d+) из (\d+) — для договоров и выплат$/,'$1 of $2 filled — for leases and payouts'],[/^сейчас: (.+)$/,'now: $1'],[/^счёт (.+)$/,'account $1'],[/^карта (.+)$/,'card $1']);
 function trText(t){if(LANG!=='en'||!t||!/[А-Яа-яЁё]/.test(t))return t;const k=t.trim().replace(/\s+/g,' ');let r=EN[k];
   if(r==null&&k.includes(' · ')){const parts=k.split(' · ').map(x=>x&&/[А-Яа-яЁё]/.test(x)?trText(x):x);const j=parts.join(' · ');if(j!==k)r=j}
   if(r==null)for(const[re,fn]of EN_RE){const m=k.match(re);if(m){r=typeof fn==='function'?fn(...m):k.replace(re,fn);break}}
