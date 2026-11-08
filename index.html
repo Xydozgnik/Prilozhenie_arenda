@@ -382,7 +382,10 @@ html{-webkit-tap-highlight-color:transparent}
 
 <script>
 (function(){
-const KEY='arenda-proto-v1';const TKEY='arenda-theme';const LKEY='arenda-lang';
+/* ?new — чистое приложение, как у нового пользователя: без примеров, данные хранятся отдельно от прототипа */
+const NEWMODE=new URLSearchParams(location.search).has('new');
+const KEY=NEWMODE?'arenda-new-v1':'arenda-proto-v1';
+const emptyState=()=>({v:1,role:null,npd:true,me:{landlord:{},city:''},owners:[],objects:[]});const TKEY='arenda-theme';const LKEY='arenda-lang';
 let LANG='ru';try{LANG=localStorage.getItem(LKEY)==='en'?'en':'ru'}catch(e){}
 let THEME='auto';try{THEME=localStorage.getItem(TKEY)||'auto'}catch(e){}
 const applyTheme=()=>{if(THEME==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=THEME};applyTheme();
@@ -472,7 +475,7 @@ const OW_L=['name','phone','birth','passport','issued','reg','bank','account','c
 const ownerBy=name=>(S.owners||[]).find(w=>w.name===name);
 function ownerUpsert(name,data){S.owners=S.owners||[];let w=ownerBy(name);if(!w){w={id:uid(),name};S.owners.push(w)}Object.entries(data||{}).forEach(([k,v])=>{if(filled(v))w[k]=v});return w}
 function ownerToObj(w,o){o.owner=w.name;o.landlord=o.landlord||{};OW_L.forEach(k=>{if(filled(w[k]))o.landlord[k]=w[k]});if(filled(w.commission))o.commission=Number(w.commission)}
-function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.v===1)return fixIds(d)}}catch(e){}return fixIds(sample())}
+function load(){try{const s=localStorage.getItem(KEY);if(s){const d=JSON.parse(s);if(d&&d.v===1)return fixIds(d)}}catch(e){}return fixIds(NEWMODE?emptyState():sample())}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){return false}}
 let S=load();
 const ui={fin:{mode:'month',anchor:mkey(TODAY),from:addDays(TODAY,-89),to:TODAY},view:'home',objId:null,tab:null,filter:'all',sheet:null,err:'',photo:null,meterId:null,payRef:null,invId:null};
@@ -1023,7 +1026,7 @@ setInterval(()=>{const t=document.getElementById('a_timer');if(t&&ui.auth.step==
 function monthInc(k){let v=0;S.objects.forEach(o=>{if(o.type==='long')v+=((o.payments||{})[k]||{}).amount||0;else(o.bookings||[]).forEach(b=>{if(mkey(b.from)===k)v+=paidOf(b)})});return v}
 /* графики в зелёных блоках — нарастающим итогом и только по прошедшим месяцам: линия растёт вместе с доходом */
 const cumul=a=>{let t=0;return [0,...a.map(v=>t+=Math.max(0,v))]};
-function spark(vals){if(vals.length<2)return'';const mx=Math.max(...vals,1),n=vals.length;
+function spark(vals){if(vals.length<2||!vals.some(v=>v>0))return'';const mx=Math.max(...vals,1),n=vals.length;
   const P=vals.map((v,i)=>[i/(n-1)*100,30-v/mx*25]);const f1=x=>x.toFixed(1);
   /* плавная линия: между точками кривая с горизонтальными касательными */
   const d='M'+f1(P[0][0])+' '+f1(P[0][1])+P.slice(1).map((q,i)=>{const p0=P[i],mx2=(p0[0]+q[0])/2;return ` C${f1(mx2)} ${f1(p0[1])} ${f1(mx2)} ${f1(q[1])} ${f1(q[0])} ${f1(q[1])}`}).join('');
@@ -1052,7 +1055,7 @@ function vObjects(){
     ${list.map(o=>{const[st,c]=objStatus(o);return `<div class="card obj" tabindex="0" data-open="${o.id}">
       <div class="head"><div style="display:flex;gap:12px;min-width:0">${objIco(o)}<div style="min-width:0"><div class="type">${KIND[kindOf(o)][0]} · ${o.type==='long'?'долгосрочно':'посуточно'}</div><div class="addr">${esc(o.name)}</div></div></div><span class="pill ${c}">${esc(st)}</span></div>
       <div class="meta num"><span>${o.area} м²</span><span>${o.type==='long'?rub(rentFor(o,mkey(TODAY)))+' / мес':rub(o.rent)+' / сутки'}</span>${o.type==='long'&&o.tenant.name?`<span>${esc(o.tenant.name)}</span>`:''}${S.role==='agent'&&o.owner?`<span>Собственник: ${esc(o.owner)}</span>`:''}</div>
-    </div>`}).join('')||'<div class="card note">Нет объектов этого типа</div>'}
+    </div>`}).join('')||(S.objects.length?'<div class="card note">Нет объектов этого типа</div>':'<div class="card note">Объектов пока нет. Добавьте первую квартиру, комнату или дом — дальше приложение подскажет, что заполнить.</div>')}
     <button class="btn wide" data-act="addObj">Добавить объект</button>
     ${S.role==='private'?`<p class="note">Тариф «Частник»: ${S.objects.length} из ${lim} объектов.</p>`:''}
   </main>`}
@@ -1225,7 +1228,7 @@ function vFinance(){
     ${F.mode==='custom'?`<div class="card grid2">${f('f_from','С','date',F.from)}${f('f_to','По','date',F.to)}</div>`:`<div class="calhead"><button class="back" data-finnav="-1" aria-label="Раньше">‹</button><div class="calt"><div class="t" style="text-transform:capitalize">${Rg.label}</div></div><button class="back" data-finnav="1" aria-label="Позже">›</button></div>`}
     <div class="sum3"><div class="card wide hero"><div><div class="label">Чистый доход${F.mode==='custom'?'':' · '+Rg.label}</div><div class="big num">${rub(tot.net)}</div></div>${sp}<div class="note num">доход ${rub(tot.inc)} · расходы ${rub(tot.exp)}${ag?' · комиссия '+rub(tot.com):''}</div></div></div>
     ${(()=>{const v=vacancyFor(Rg),fc=forecast3();const tm=taxMode(),base=ag?tot.com:tot.inc,tx=taxEst(base,tm);
-      return `<div class="grid2 fin2"><div class="card"><div class="label">Простой за период</div><div class="big num" style="font-size:20px">${v.months||v.nights?`${v.months?v.months+' '+plural(v.months,['мес.','мес.','мес.']):''}${v.months&&v.nights?' · ':''}${v.nights?v.nights+' '+plural(v.nights,['ночь','ночи','ночей']):''}`:'Без простоя'}</div><div class="note">${v.lost?'недополучено около '+rub(v.lost):'все объекты были сданы'}</div></div>
+      return `<div class="grid2 fin2"><div class="card"><div class="label">Простой за период</div><div class="big num" style="font-size:20px">${!S.objects.length?'—':v.months||v.nights?`${v.months?v.months+' '+plural(v.months,['мес.','мес.','мес.']):''}${v.months&&v.nights?' · ':''}${v.nights?v.nights+' '+plural(v.nights,['ночь','ночи','ночей']):''}`:'Без простоя'}</div><div class="note">${!S.objects.length?'добавьте объект, чтобы считать простой':v.lost?'недополучено около '+rub(v.lost):'все объекты были сданы'}</div></div>
       <div class="card"><div class="label">Прогноз на 3 месяца</div><div class="big num" style="font-size:20px">${rub(fc.sum)}</div><div class="note">${fc.parts.map(([k,x])=>`${MON_S[Number(k.slice(5))-1]} ${rub(x)}`).join('<br>')}</div></div></div>
       <div class="card total"><div><div class="label">Налог за период, оценка ${hint('tax')}</div><div class="note">${TAX[tm][0]} ${TAX[tm][1]} от ${ag?'комиссии':'дохода'} ${rub(base)} · режим меняется в Настройках</div></div><div class="big num" style="font-size:20px">${rub(tx)}</div></div>`})()}
     <h2>По объектам</h2>
@@ -1286,7 +1289,7 @@ function vProfile(){
     <div class="list"><div class="row tap" tabindex="0" data-act="settings">${ico('gear','acc','sm')}<div class="main"><div class="t">Настройки</div><div class="s">${LANG==='en'?'English':'Русский'} · вход: ${({none:'без защиты',pin:'код',bio:'отпечаток или лицо'})[(S.lock||{}).mode||'none']} · тема</div></div><span class="chev" aria-hidden="true">›</span></div>
       <div class="row tap" tabindex="0" data-act="help">${ico('sparkle','acc','sm')}<div class="main"><div class="t">Помощь и идеи</div><div class="s">как пользоваться · пожелания · что нового</div></div><span class="chev" aria-hidden="true">›</span></div></div>
     <button class="btn ghost wide" data-act="switchRole">Сменить роль на «${S.role==='agent'?'Частник':'Агент'}»</button>
-    <button class="btn ghost wide" data-act="reset">Вернуть примеры данных</button>
+    <button class="btn ghost wide" data-act="reset">${NEWMODE?'Стереть все данные':'Вернуть примеры данных'}</button>
     <button class="btn ghost wide" data-act="logout">Выйти из аккаунта</button>
     <p class="note">Это прототип: данные хранятся только в этом браузере и не видны на других устройствах. В рабочей версии код придёт по СМС, данные будут на сервере, а напоминания — push-уведомлениями.</p>
   </main>`;
@@ -1421,6 +1424,7 @@ function sheet(){
     <p class="note">Для долгосрочной аренды:</p>
     <div class="grid2">${f('o_tn','Арендатор')}${f('o_tp','Телефон','tel')}</div>
     <div class="grid2">${f('o_start','Начало договора','date',TODAY)}${f('o_end','Конец договора','date',addMonths(TODAY,11))}</div>
+    <label class="check"><input type="checkbox" name="o_paidpast" checked><span>Если договор начался раньше — оплаты за прошлые месяцы уже получены</span></label>
     <div class="f"><label for="o_el">Счётчик электричества</label><select id="o_el" name="o_el">${Object.entries(EL_MODES).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></div>
     <div class="grid2">${f('o_day','День оплаты','number','1','min="1" max="31"')}${f('o_dep','Залог, ₽','number','0','min="0"')}</div>
     ${S.role==='agent'?`<div class="grid2">${f('o_owner','Собственник','text','','list="owners_dl" autocomplete="off"')}<datalist id="owners_dl">${(S.owners||[]).map(w=>`<option value="${esc(w.name)}">`).join('')}</datalist>${f('o_com','Комиссия, %','number','10','min="0" max="100"')}</div>`:''}`;
@@ -1533,7 +1537,10 @@ function submit(name,fd){
     if(type==='long'&&no.contract.end<no.contract.start)return'Конец договора раньше начала.';
     if(type==='long'){ensureContract(no,S.me);no.contract.sign=no.contract.start}
     if(S.role==='agent'&&no.owner){const w=ownerUpsert(no.owner,n('o_com')?{commission:n('o_com')}:{});ownerToObj(w,no);if(!n('o_com')&&!filled(w.commission))no.commission=0}
-    S.objects.push(no);ui.objId=no.id;ui.view='object';ui.tab=null;toast('Объект добавлен');return;
+    S.objects.push(no);
+    /* договор, начатый раньше: прошлые месяцы отмечаются оплаченными в срок (и с чеком НПД), чтобы не появлялся ложный долг */
+    if(type==='long'&&g('o_paidpast')){schedule(no).filter(x=>x.due<TODAY).forEach(x=>{no.payments[x.k]={amount:x.amt,date:x.due,parts:[{amount:x.amt,date:x.due}],npd:true}})}
+    ui.objId=no.id;ui.view='object';ui.tab=null;toast('Объект добавлен');return;
   }
   if(name==='addMeter'||name==='addMeterTenant'){
     const rv=readForm(o,g,'m_');if(!rv)return'Заполните все показания.';
@@ -1660,13 +1667,13 @@ Object.assign(EN,{
 'Вход без защиты':'Sign-in protection off','Вход по коду включён':'Code sign-in on','Код изменён':'Code changed','Вход по отпечатку или лицу включён':'Fingerprint or face sign-in on','Включено. В этом браузере сканера нет — покажем имитацию':'On. This browser has no sensor, so we’ll simulate it','Биометрию не включили: телефон не подтвердил':'Biometrics not enabled: the phone didn’t confirm','Слишком много попыток — войдите по СМС':'Too many attempts — sign in by SMS','Не получилось — введите код':'Didn’t work — enter the code',
 /* профиль */
 'Имя':'Name','Телефон':'Phone','Роль':'Role','Тариф':'Plan','Объектов':'Properties','Подписка, до 5 объектов':'Subscription, up to 5 properties','Бесплатный, 1 объект':'Free, 1 property','Агент (без лимита в прототипе)':'Agent (no limit in the prototype)',
-'Вернуть примеры данных':'Restore sample data','Выйти из аккаунта':'Sign out','Выйти':'Sign out','Роль изменена':'Role changed','Примеры восстановлены':'Sample data restored',
+'Вернуть примеры данных':'Restore sample data','Стереть все данные':'Erase all data','Данные стёрты':'Data erased','Выйти из аккаунта':'Sign out','Выйти':'Sign out','Роль изменена':'Role changed','Примеры восстановлены':'Sample data restored',
 'Это прототип: данные хранятся только в этом браузере и не видны на других устройствах. В рабочей версии код придёт по СМС, данные будут на сервере, а напоминания — push-уведомлениями.':'This is a prototype: data stays in this browser only and isn’t visible on other devices. In the real app the code comes by SMS, data lives on a server, and reminders arrive as push notifications.',
 'English · вход: без защиты · тема':'English · sign-in: none · theme','English · вход: код · тема':'English · sign-in: code · theme','English · вход: отпечаток или лицо · тема':'English · sign-in: biometrics · theme',
 /* главная */
 'Долги':'Debts','Ближайшие события':'Upcoming events','Событий нет':'No events','Передать показания':'Submit meter readings','Конец договора через':'Lease ends in','Проверить показания по фото':'Check readings against the photo',
 /* объекты */
-'Все':'All','Долгосрочные':'Long-term','Посуточные':'Short-term','Добавить объект':'Add property','Нет объектов этого типа':'No properties of this type','Долгосрочная':'Long-term','Посуточная':'Short-term',
+'Все':'All','Долгосрочные':'Long-term','Посуточные':'Short-term','Добавить объект':'Add property','Нет объектов этого типа':'No properties of this type','Объектов пока нет. Добавьте первую квартиру, комнату или дом — дальше приложение подскажет, что заполнить.':'No properties yet. Add your first flat, room or house — the app will show what to fill in next.','Нет объектов':'No properties','добавьте объект, чтобы считать простой':'add a property to track vacancy','Если договор начался раньше — оплаты за прошлые месяцы уже получены':'If the lease started earlier, past months are already paid','Долгосрочная':'Long-term','Посуточная':'Short-term',
 'Квартира':'Flat','Комната':'Room','Дом':'House','долгосрочно':'long-term','посуточно':'short-term','Изменить вид недвижимости':'Change property type','Вид недвижимости':'Property type','От вида зависит иконка объекта. Для комнаты не показываем число комнат.':'The type sets the property icon. Rooms don’t show a room count.',
 'Новый объект':'New property','Тип аренды':'Rental type','Адрес':'Address','Город, улица, дом, квартира или комната':'City, street, building, flat or room','Площадь, м²':'Area, m²','Комнат':'Rooms','Плата, ₽ (в месяц или за сутки)':'Rent, ₽ (per month or per night)','Для долгосрочной аренды:':'For long-term rentals:','Арендатор':'Tenant','Начало договора':'Lease start','Конец договора':'Lease end','Счётчик электричества':'Electricity meter','День оплаты':'Payment day','Собственник':'Owner','Комиссия, %':'Commission, %',
 'Однотарифный':'Single-rate','Двухтарифный (Т1, Т2)':'Two-rate (T1, T2)','Трёхтарифный (Т1, Т2, Т3)':'Three-rate (T1, T2, T3)','Заполните адрес, площадь и плату.':'Fill in the address, area and rent.','Объект добавлен':'Property added','Конец договора раньше начала.':'The lease ends before it starts.','На тарифе «Частник» до 5 объектов. Для большего числа нужен тариф агента.':'The Private plan allows up to 5 properties. For more, use the Agent plan.',
@@ -1981,7 +1988,7 @@ function onTap(e){
     else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
     else if(a==='docx'){downloadContract(o);toast('Договор скачан')}
     else if(a==='invite'){o.invited=true;ui.sheet='invite';ui.err='';save()}
-    else if(a==='copyInvite'){const link=location.origin+location.pathname+'?invite='+o.invite;const txt=`Приглашение в приложение «Порог»: ${link} — или введите код ${o.invite} на первом экране.`;
+    else if(a==='copyInvite'){const link=location.origin+location.pathname+'?'+(NEWMODE?'new&':'')+'invite='+o.invite;const txt=`Приглашение в приложение «Порог»: ${link} — или введите код ${o.invite} на первом экране.`;
       (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Приглашение скопировано'),()=>toast('Код приглашения: '+o.invite))}
     else if(a==='logout'){S.session=null;ui.sheet=null;ui.view='home';ui.auth={step:'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:'',sent:0,name:''};M.auth=null;save();window.scrollTo(0,0)}
     else if(a==='install'){if(installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;render()})}return}
@@ -2002,7 +2009,7 @@ function onTap(e){
     else if(a==='delInv'){o.inventory=o.inventory.filter(y=>y.id!==ui.invId);ui.sheet=null;ui.photo=null;save();toast('Удалено из описи')}
     else if(a==='rejectClaim'){const r=o.payments[ui.payRef.k];r.rejected={amount:r.claimed.amount,date:r.claimed.date};delete r.claimed;ui.sheet=null;save();toast('Оплата отклонена')}
     else if(a==='npdToggle'){S.npd=S.npd===false;save();toast(S.npd?'Напоминания о чеке НПД включены':'Напоминания о чеке НПД выключены')}
-    else if(a==='reset'){const keep={role:S.role,user:S.user,session:S.session,npd:S.npd};S=sample();Object.assign(S,keep);ui.view='home';save();toast('Примеры восстановлены')}
+    else if(a==='reset'){if(NEWMODE&&!confirm(LANG==='en'?'Erase all properties, payments and files on this phone?':'Стереть все объекты, оплаты и файлы на этом телефоне?'))return;const keep={role:S.role,user:S.user,session:S.session,npd:S.npd,lock:S.lock};S=NEWMODE?fixIds(emptyState()):sample();Object.assign(S,keep);ui.view='home';save();toast(NEWMODE?'Данные стёрты':'Примеры восстановлены')}
     else {ui.sheet=a;ui.err='';ui.photo=null}
   }
   render();
