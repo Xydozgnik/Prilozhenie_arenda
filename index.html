@@ -130,7 +130,7 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .nav{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;width:min(372px,calc(100% - 32px));padding:5px;border-radius:999px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--fill) 94%,transparent),color-mix(in srgb,var(--fill-2) 94%,transparent));-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
   border:1px solid rgb(255 255 255/.09);box-shadow:0 16px 34px -12px rgb(20 36 15/.55),0 2px 6px rgb(20 36 15/.15)}
-.nav div{position:relative;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav div{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .nav button{position:relative;z-index:1;border:0;background:none;border-radius:999px;padding:7px 4px 6px;cursor:pointer;font-size:11px;color:rgb(238 244 234/.62);display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .3s,transform .35s var(--spring)}
 .nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .45s var(--spring)}
 .nav button[aria-current="page"]{color:#fff;font-weight:600}
@@ -151,7 +151,7 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .role b{font-size:17px}
 .zones{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
 .zones legend{font-size:13px;color:var(--muted);padding:0 4px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .zones .grid2,.zones .grid3{gap:8px}
 @media (max-width:380px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .thumb{width:46px;height:46px;flex:none;border-radius:10px;object-fit:cover;background:var(--surface-2)}
@@ -190,13 +190,13 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .ut .d{font-size:13px;color:var(--muted)}.ut .d b{color:var(--ink);font-weight:600}
 .total{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .rd{display:flex;flex-wrap:wrap;gap:4px 12px}.rd span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
-.seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);border-radius:999px;padding:4px}
+.seg{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:var(--surface-2);border-radius:999px;padding:4px}
 .seg button{position:relative;z-index:1;transition:color .3s;border:0;background:none;border-radius:999px;padding:8px;cursor:pointer;color:var(--muted)}
 .seg button[aria-pressed="true"]{color:var(--ink);font-weight:600}
 .seg button:focus-visible{outline:2px solid var(--accent)}
 
 /* Выбор вида недвижимости: три плитки с иконками */
-.kinds{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-width:0}
+.kinds{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
 .kinds legend{font-size:13px;color:var(--muted);padding:0 0 6px}
 .kind{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px 7px;border-radius:14px;cursor:pointer;font-size:13px;
   background:var(--surface-2);border:1.5px solid transparent;transition:border-color .2s,background-color .2s,transform .35s var(--spring)}
@@ -234,18 +234,18 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .dots{display:flex;justify-content:center;gap:18px;margin-top:8px}.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transition:background-color .15s,border-color .15s,transform .25s var(--spring)}
 .dots i.on{background:var(--accent);border-color:var(--accent);transform:scale(1.12)}
 .lockerr{text-align:center;min-height:20px}
-.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:300px;width:100%;align-self:center}
+.pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:300px;width:100%;align-self:center}
 .key{height:64px;border-radius:999px;border:1px solid var(--edge);background:var(--card);box-shadow:var(--shadow);font-family:var(--display);font-size:24px;font-weight:300;color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:transform .3s var(--spring)}
 .key:active{transform:scale(.92)}.key.fn{background:none;border:0;box-shadow:none;color:var(--accent)}.key.fn svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.key .fl{fill:currentColor;fill-opacity:.22}
 .key.pressed{background:linear-gradient(color-mix(in srgb,var(--accent-soft) 80%,transparent),color-mix(in srgb,var(--accent-soft) 80%,transparent)),var(--card)}
 .biosim{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:8px 0}
 @media (prefers-reduced-motion:no-preference){.biosim .ico{animation:pulse 1.4s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.1);box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 12%,transparent)}}}
-.tabs.six{display:grid;grid-template-columns:repeat(3,1fr);border-radius:20px;row-gap:2px}
+.tabs.six{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:20px;row-gap:2px}
 .tbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:5px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;vertical-align:1px}
-.seg.four{grid-template-columns:repeat(4,1fr)}.seg button{font-size:14px}
+.seg.four{grid-template-columns:repeat(4,minmax(0,1fr))}.seg button{font-size:14px}
 .calhead{display:flex;align-items:center;gap:10px}.calt{flex:1;text-align:center;min-width:0}.calt .t{font-weight:600}
 .cal{display:flex;flex-direction:column;gap:10px}
-.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .calgrid .wd{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
 .cd{aspect-ratio:1;border:0;background:var(--surface-2);border-radius:10px;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;transition:transform .3s var(--spring)}
 .cd.past{opacity:.55}.cd.today{outline:2px solid var(--accent);outline-offset:-2px;font-weight:700}
@@ -276,7 +276,7 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .step .chev{margin-left:auto}
 .f textarea{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;width:100%;min-width:0;font:inherit;color:inherit;resize:vertical}
 .f textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
-.tabs.seven{display:grid;grid-template-columns:repeat(4,1fr);border-radius:20px;row-gap:2px}
+.tabs.seven{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:20px;row-gap:2px}
 .filebtn{display:grid;place-items:center;text-align:center;cursor:pointer}
 .fin2{gap:10px}.fin2 .card{padding:12px 14px}
 .objhead .acts{align-self:flex-start}
@@ -573,6 +573,13 @@ function periodFin(o,from,to){const kf=mkey(from),kt=mkey(to);let inc=0;
   const exps=(o.expenses||[]).filter(e=>e.date>=from&&e.date<=to);const exp=exps.reduce((a,e)=>a+e.amount,0);
   const com=S.role==='agent'?Math.round(inc*(o.commission||0)/100):0;return{inc,exp,com,net:inc-exp-com,exps}}
 const QN=['I','II','III','IV'];
+/* доход для графика в «Финансах»: до двух месяцев — по дням (по датам оплат и заездов), дольше — по месяцам; только прошедшие дни */
+function incSeries(R){const end=R.to<TODAY?R.to:TODAY;if(R.from>end)return[];const days=daysBetween(R.from,end);
+  if(days<=62){const v=new Array(days+1).fill(0);const put=(d,a)=>{if(!a)return;v[daysBetween(R.from,d<R.from?R.from:d>end?end:d)]+=a};const kf=mkey(R.from),kt=mkey(R.to);
+    S.objects.forEach(o=>{if(o.type==='long')Object.entries(o.payments||{}).forEach(([k,r])=>{if(k<kf||k>kt)return;const ps=r.parts&&r.parts.length?r.parts:[{amount:r.amount||0,date:r.date}];ps.forEach(x=>put(x.date||k+'-01',x.amount))});
+      else(o.bookings||[]).forEach(b=>{if(b.from>=R.from&&b.from<=R.to)put(b.from,paidOf(b))})});return v}
+  const out=[];let k=mkey(R.from),g=0;while(k<=mkey(end)&&g++<240){const a=k+'-01'>R.from?k+'-01':R.from;const last=k+'-'+pad(new Date(+k.slice(0,4),+k.slice(5),0).getDate());const b=last<R.to?last:R.to;
+    out.push(S.objects.reduce((t,o)=>t+periodFin(o,a,b).inc,0));k=mkey(addMonths(k+'-01',1))}return out}
 function finRange(){const F=ui.fin;const[y,m]=F.anchor.split('-').map(Number);
   if(F.mode==='month')return{from:F.anchor+'-01',to:y+'-'+pad(m)+'-'+pad(new Date(y,m,0).getDate()),label:mname(F.anchor),months:[F.anchor]};
   if(F.mode==='quarter'){const q=Math.floor((m-1)/3);const sm=q*3+1;const ms=[0,1,2].map(i=>y+'-'+pad(sm+i));return{from:ms[0]+'-01',to:ms[2]+'-'+pad(new Date(y,sm+2,0).getDate()),label:QN[q]+' квартал '+y,months:ms}}
@@ -1224,7 +1231,7 @@ function vFinance(){
   const tot=rows.reduce((a,r)=>({inc:a.inc+r.inc,exp:a.exp+r.exp,com:a.com+r.com,net:a.net+r.net}),{inc:0,exp:0,com:0,net:0});
   const ag=S.role==='agent';const F=ui.fin;
   const cats={};rows.forEach(r=>r.exps.forEach(e=>{const c=e.cat==='Коммуналка'?'Коммунальные платежи':e.cat;cats[c]=(cats[c]||0)+e.amount}));
-  const spM=Rg.months.filter(k=>k<=mkey(TODAY));const sp=spM.length>=2?spark(cumul(spM.map(k=>{let v=0;S.objects.forEach(o=>{const f=periodFin(o,k+'-01',k+'-31');v+=f.inc});return v}))):'';
+  const sp=spark(cumul(incSeries(Rg)));
   const owners=[...new Set([...(S.owners||[]).map(w=>w.name),...S.objects.map(o=>o.owner).filter(Boolean)])];
   return top('Финансы')+`<main>
     <div class="seg four" role="group" aria-label="Период">${[['month','Месяц'],['quarter','Квартал'],['year','Год'],['custom','Период']].map(([k,l])=>`<button data-finmode="${k}" aria-pressed="${F.mode===k}">${l}</button>`).join('')}</div>
