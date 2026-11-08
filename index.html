@@ -20,6 +20,9 @@
   --display:"Unbounded","Golos Text",system-ui,sans-serif;
   --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:16px;
+  --spring:cubic-bezier(.34,1.42,.64,1);   /* пружина с лёгким перелётом: пилюли, нажатия */
+  --glide:cubic-bezier(.22,1,.36,1);       /* мягкое торможение: экраны, блоки */
+  --sheet:cubic-bezier(.32,.72,0,1);       /* как у шторок iOS */
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141017; --surface:#1E1822; --surface-2:#261F2B; --line:#352C3B;
@@ -37,7 +40,7 @@
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
-.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:14px 10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:10px}
 .top h1{font-family:var(--display);font-weight:600;font-size:18px;line-height:1.25;margin:0;flex:1;min-width:0;text-wrap:balance;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .proto{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
@@ -67,9 +70,9 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .p-ok{background:var(--ok-soft);color:var(--ok)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--info-soft);color:var(--info)} .p-mute{background:var(--surface-2);color:var(--muted)}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;font-size:14px}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{position:relative;display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{position:relative;z-index:1;transition:color .3s,border-color .3s,transform .35s var(--spring);border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;font-size:14px}
+.chip[aria-pressed="true"]{background:transparent;color:var(--bg);border-color:transparent}
 .obj{display:flex;flex-direction:column;gap:10px;cursor:pointer;border:1px solid transparent}
 .obj:hover{border-color:var(--line)}
 .obj .head{display:flex;justify-content:space-between;gap:10px;align-items:start}
@@ -81,19 +84,23 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .btn.small{padding:7px 12px;font-size:13px;border-radius:10px}
 .btn.wide{width:100%}
 .btn:focus-visible,.chip:focus-visible,.tab:focus-visible,.nav button:focus-visible,.back:focus-visible,.row.tap:focus-visible,.obj:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;overflow-x:auto}
-.tab{flex:1;border:0;background:none;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;font-size:14px;color:var(--muted)}
-.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.tabs{position:relative;display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{position:relative;z-index:1;flex:1;border:0;background:none;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap;font-size:14px;color:var(--muted);transition:color .3s}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px}
 .kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .note{font-size:13px;color:var(--muted)}
 .alert{border-radius:12px;padding:10px 14px;font-size:14px}
 .alert.warn{background:var(--warn-soft);color:var(--warn)} .alert.bad{background:var(--bad-soft);color:var(--bad)} .alert.info{background:var(--info-soft);color:var(--info)}
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.nav div{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
-.nav button{border:0;background:none;padding:10px 4px 12px;cursor:pointer;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
-.nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Нижнее меню — плавающая матовая капсула, активный пункт подсвечен «пилюлей», которая переезжает */
+.nav{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;width:min(372px,calc(100% - 32px));padding:5px;border-radius:999px;
+  background:color-mix(in srgb,var(--surface) 74%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  border:1px solid color-mix(in srgb,var(--line) 80%,transparent);box-shadow:0 14px 34px -12px rgb(30 23 36/.35),0 2px 6px rgb(30 23 36/.08)}
+.nav div{position:relative;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav button{position:relative;z-index:1;border:0;background:none;border-radius:999px;padding:7px 4px 6px;cursor:pointer;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .3s,transform .35s var(--spring)}
+.nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .45s var(--spring)}
 .nav button[aria-current="page"]{color:var(--accent);font-weight:600}
+.nav button[aria-current="page"] svg{transform:translateY(-1px) scale(1.08)}
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(10,16,14,.45);display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:480px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding-block:18px calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
 .sheet h3{font-family:var(--display);font-weight:500;font-size:18px;margin:0}
@@ -122,7 +129,9 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
 .tenant{background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,var(--accent) 70%,var(--hot)) 0%,var(--accent) 55%);color:var(--accent-ink);border-radius:18px;padding:18px}
 .tenant .big{font-size:30px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);box-shadow:0 10px 30px -10px rgb(0 0 0/.4);
+  transform:translate(-50%,16px) scale(.92);opacity:0;pointer-events:none;transition:transform .45s var(--spring),opacity .2s}
+.toast.show{transform:translate(-50%,0) scale(1);opacity:1}
 table.fin{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
 table.fin th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:8px 6px}
 table.fin th:first-child,table.fin td:first-child{text-align:left}
@@ -148,12 +157,47 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .ut .d{font-size:13px;color:var(--muted)}.ut .d b{color:var(--ink);font-weight:600}
 .total{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .rd{display:flex;flex-wrap:wrap;gap:4px 12px}.rd span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);border-radius:12px;padding:4px}
-.seg button{border:0;background:none;border-radius:9px;padding:8px;cursor:pointer;color:var(--muted)}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px #0002}
+.seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);border-radius:12px;padding:4px}
+.seg button{position:relative;z-index:1;transition:color .3s;border:0;background:none;border-radius:9px;padding:8px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{color:var(--ink);font-weight:600}
 .seg button:focus-visible{outline:2px solid var(--accent)}
 
-@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+/* ---------- движение ---------- */
+/* Переезжающая подсветка активного пункта: меню, вкладки, фильтры, тема */
+.ind{position:absolute;left:0;top:0;z-index:0;pointer-events:none;border-radius:9px;background:var(--accent-soft)}
+.ind.go{transition:transform .5s var(--spring),width .5s var(--spring),height .3s var(--glide)}
+.nav .ind{border-radius:999px;background:var(--accent-soft)}
+.chips .ind{border-radius:999px;background:var(--ink)}
+.seg .ind{background:var(--surface);box-shadow:0 1px 3px rgb(0 0 0/.14)}
+/* Отклик на нажатие */
+.btn,.role,.back,.tab,.seg button{transition:transform .35s var(--spring),background-color .2s,color .3s}
+.obj,.row.tap,.ut{transition:transform .35s var(--spring),background-color .2s,border-color .2s}
+@media (hover:hover){.btn:hover{filter:brightness(1.06)}}
+.btn:active,.chip:active,.tab:active,.seg button:active,.back:active,.role:active{transform:scale(.95)}
+.nav button:active{transform:scale(.9)}
+.obj:active,.row.tap:active{transform:scale(.985)}
+@media (prefers-reduced-motion:no-preference){
+  /* появление блоков: класс .a ставит скрипт только при смене экрана или вкладки */
+  .a{animation:enter .55s var(--glide) both;animation-delay:calc(var(--i,0) * 45ms)}
+  @keyframes enter{from{opacity:0;transform:translate(var(--dx,0),var(--dy,14px)) scale(var(--s,1))}}
+  .pop-in{animation:popin .5s var(--spring) both}
+  @keyframes popin{from{opacity:0;transform:scale(.6)}}
+  .bar.grow i{animation:grow 1s var(--glide) .2s both;transform-origin:left}
+  @keyframes grow{from{transform:scaleX(0)}}
+  .odo.roll i{animation:roll .6s var(--spring) both;animation-delay:calc(var(--d,0) * 55ms + 150ms)}
+  @keyframes roll{from{transform:translateY(-70%);opacity:0}}
+  .nav.first{animation:navin .7s var(--spring) .15s both}
+  @keyframes navin{from{transform:translate(-50%,140%)}}
+  /* шторки: открытие снизу по кривой iOS, закрытие — копия уезжает вниз */
+  .scrim.open{animation:dim .3s ease-out both}.scrim.open .sheet{animation:sheetup .5s var(--sheet) both}
+  .scrim.out{animation:undim .26s ease-in both;pointer-events:none}.scrim.out .sheet{animation:sheetdown .28s var(--glide) both}
+  @keyframes dim{from{background:transparent}}
+  @keyframes undim{to{background:transparent}}
+  @keyframes sheetup{from{transform:translateY(100%)}}
+  @keyframes sheetdown{to{transform:translateY(100%)}}
+  .err.shake{animation:shake .4s var(--glide)}
+  @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+}
 </style>
 </head>
 <body>
@@ -339,7 +383,7 @@ const MI={cold:['cold','cold'],hot:['hot','hot'],el:['el','el'],el1:['sun','el']
 const CAT={'Ремонт':['wrench','acc'],'Мебель':['sofa','night'],'Мебель и техника':['sofa','night'],'Коммуналка':['receipt','cold'],'Уборка':['sparkle','ok'],'Налоги':['percent','bad'],'Ипотека':['house','el'],'Другое':['dots','mute']};
 const catIco=c=>{const[n,t]=CAT[c]||CAT['Другое'];return ico(n,t)};
 function odo(v,u){const n=Number(v)||0;const fd=u==='м³'?2:1;const[a,b]=n.toFixed(fd).split('.');
-  return `<span class="odo" role="img" aria-label="${n}">${a.padStart(5,'0').split('').map(c=>`<i>${c}</i>`).join('')}${b.split('').map(c=>`<i class="fr">${c}</i>`).join('')}</span>`}
+  return `<span class="odo" role="img" aria-label="${n}">${(a.padStart(5,'0')+b).split('').map((c,i)=>`<i style="--d:${i}"${i>=Math.max(5,a.length)?' class="fr"':''}>${c}</i>`).join('')}</span>`}
 
 /* ---------- вид ---------- */
 const ICON={
@@ -590,13 +634,67 @@ function submit(name,fd){
 
 /* ---------- отрисовка и события ---------- */
 let toastT;
-function toast(t){clearTimeout(toastT);let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;el.hidden=false;toastT=setTimeout(()=>{el.hidden=true},2400)}
+function toast(t){clearTimeout(toastT);let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el)}el.textContent=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');toastT=setTimeout(()=>el.classList.remove('show'),2400)}
 const root=document.getElementById('root');
+/* ---------- движение ----------
+   Экран перерисовывается целиком, поэтому анимации запускаются только когда что-то сменилось:
+   экран, вкладка, открыта или закрыта шторка. Отметка оплаты и т.п. просто обновляет данные без «прыжков». */
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const DEPTH={home:0,objects:0,finance:0,profile:0,object:1,tenant:2};
+const TABS=['contract','pay','meters','exp','book'];
+const M={key:null,view:null,tab:null,sheet:null,ind:{},nav:false};
+function stagger(els,dx,dy,from=0){els.forEach((el,n)=>{el.classList.add('a');el.style.setProperty('--i',from+n);el.style.setProperty('--dx',dx);el.style.setProperty('--dy',dy)})}
+function countUp(el){const txt=el.textContent;const to=parseInt(txt.replace(/[^\d-]/g,''),10);if(!to||RM.matches)return;const isRub=txt.includes('₽');const t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/800);const e=1-Math.pow(1-k,3);const v=Math.round(to*e);el.textContent=isRub?rub(v):String(v);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+/* подсветка-пилюля: ставим на прошлое место без анимации, потом плавно переводим на новое */
+function slide(box,key){const on=box.querySelector('[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]');if(!on)return;
+  const ind=document.createElement('span');ind.className='ind';box.prepend(ind);
+  const to={x:on.offsetLeft,y:on.offsetTop,w:on.offsetWidth,h:on.offsetHeight};const from=M.ind[key];
+  const put=r=>{ind.style.transform=`translate(${r.x}px,${r.y}px)`;ind.style.width=r.w+'px';ind.style.height=r.h+'px'};
+  put(from&&!RM.matches?from:to);
+  if(from&&!RM.matches&&(from.x!==to.x||from.w!==to.w)){void ind.offsetWidth;ind.classList.add('go');put(to);on.classList.add('pop-in');on.addEventListener('animationend',()=>on.classList.remove('pop-in'),{once:true})}
+  M.ind[key]=to}
+function motion(){
+  const key=ui.view+'|'+(ui.view==='object'||ui.view==='tenant'?ui.objId:'')+'|'+(ui.view==='object'?ui.tab:'');
+  const app=root.querySelector('.app');const main=app&&app.querySelector('main');
+  if(main&&key!==M.key){
+    const blocks=[...main.children];const d0=DEPTH[M.view]??0,d1=DEPTH[ui.view]??0;
+    const head=app.querySelector('.top h1');
+    if(M.view===ui.view&&ui.view==='object'&&M.key&&M.key.split('|')[1]===ui.objId){
+      /* смена вкладки внутри карточки: содержимое въезжает со стороны выбранной вкладки */
+      const dir=TABS.indexOf(ui.tab)>TABS.indexOf(M.tab)?'28px':'-28px';const ti=blocks.findIndex(b=>b.classList.contains('tabs'));
+      stagger(blocks.slice(ti+1),dir,'0px');
+    }else if(M.view&&d1!==d0){
+      /* вглубь — справа, назад — слева */
+      const dir=d1>d0?'36px':'-36px';if(head)stagger([head],dir,'0px');stagger(blocks,dir,'0px');
+    }else{
+      /* смена раздела в нижнем меню и первый запуск: блоки поднимаются по очереди */
+      stagger(blocks,'0px','16px');
+    }
+    blocks.forEach((b,i)=>{if(b.classList.contains('list'))stagger([...b.children].slice(0,10),'0px','10px',i+.5);
+      if(b.classList.contains('util'))stagger([...b.children],'0px','12px',i);
+      if(b.classList.contains('sum3'))stagger([...b.children],'0px','12px',i)});
+    main.querySelectorAll('.big.num').forEach(countUp);
+    main.querySelectorAll('.bar').forEach(b=>b.classList.add('grow'));
+    main.querySelectorAll('.odo').forEach(o=>o.classList.add('roll'));
+    M.key=key;M.view=ui.view;M.tab=ui.tab;
+  }
+  root.querySelectorAll('.nav div,.tabs,.chips,.seg').forEach(b=>slide(b,b.classList[0]||'nav'));
+  const nv=root.querySelector('.nav');if(nv&&!M.nav){nv.classList.add('first');M.nav=true}
+  const sc=root.querySelector('.scrim');if(sc&&M.sheet!==ui.sheet&&!RM.matches)sc.classList.add('open');
+  if(sc&&ui.err&&M.sheet===ui.sheet){const e=sc.querySelector('.err');if(e)e.classList.add('shake')}
+  M.sheet=ui.sheet;
+}
 function render(){
-  if(!S.role){root.innerHTML=vOnboard();return}
+  if(!S.role){root.innerHTML=vOnboard();stagger([...root.querySelectorAll('.onb>*')],'0px','18px');return}
   const v={home:vHome,objects:vObjects,object:vObject,tenant:vTenant,finance:vFinance,profile:vProfile}[ui.view]||vHome;
+  /* закрываем шторку красиво: её копия уезжает вниз поверх нового экрана */
+  const old=root.querySelector('.scrim');let ghost=null;
+  if(old&&!ui.sheet&&!RM.matches){ghost=old.cloneNode(true);ghost.classList.remove('open');ghost.classList.add('out');ghost.removeAttribute('data-act');ghost.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'))}
   root.innerHTML=`<div class="app">${v()}</div>${nav()}${ui.sheet?sheet():''}`;
-  if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus()}
+  if(ghost){document.body.appendChild(ghost);setTimeout(()=>ghost.remove(),320)}
+  motion();
+  if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus({preventScroll:true})}
 }
 root.addEventListener('click',e=>{
   const t=e.target.closest('[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-pay],[data-confirm],[data-bpay],[data-claim],[data-theme-set]');
@@ -625,6 +723,8 @@ root.addEventListener('click',e=>{
   }
   render();
 });
+/* после появления снимаем класс, чтобы анимация не перебивала отклик на нажатие */
+root.addEventListener('animationend',e=>{if(e.animationName==='enter')e.target.classList.remove('a')});
 root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open],[data-meter]')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&ui.sheet){ui.sheet=null;ui.err='';render()}});
 root.addEventListener('submit',e=>{
   e.preventDefault();const form=e.target;const err=submit(form.dataset.form,new FormData(form));
