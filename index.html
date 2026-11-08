@@ -1578,7 +1578,7 @@ function slide(box,key){const on=box.querySelector('[aria-selected="true"],[aria
   const to={x:on.offsetLeft,y:on.offsetTop,w:on.offsetWidth,h:on.offsetHeight};const from=M.ind[key];
   const put=r=>{ind.style.transform=`translate(${r.x}px,${r.y}px)`;ind.style.width=r.w+'px';ind.style.height=r.h+'px'};
   put(from&&!RM.matches?from:to);
-  if(from&&!RM.matches&&(from.x!==to.x||from.w!==to.w)){void ind.offsetWidth;ind.classList.add('go');put(to);on.classList.add('pop-in');on.addEventListener('animationend',()=>on.classList.remove('pop-in'),{once:true})}
+  if(from&&!RM.matches&&(from.x!==to.x||from.y!==to.y||from.w!==to.w)){void ind.offsetWidth;ind.classList.add('go');put(to);on.classList.add('pop-in');on.addEventListener('animationend',()=>on.classList.remove('pop-in'),{once:true})}
   M.ind[key]=to}
 function motion(){
   const key=ui.view+'|'+(ui.view==='object'||ui.view==='tenant'?ui.objId:'')+'|'+(ui.view==='object'?ui.tab:'');
