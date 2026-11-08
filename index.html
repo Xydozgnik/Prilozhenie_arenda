@@ -1021,6 +1021,8 @@ setInterval(()=>{const t=document.getElementById('a_timer');if(t&&ui.auth.step==
 
 /* доход по месяцам: оплаты долгосрочных + оплаченные брони по дате заезда */
 function monthInc(k){let v=0;S.objects.forEach(o=>{if(o.type==='long')v+=((o.payments||{})[k]||{}).amount||0;else(o.bookings||[]).forEach(b=>{if(mkey(b.from)===k)v+=paidOf(b)})});return v}
+/* графики в зелёных блоках — нарастающим итогом и только по прошедшим месяцам: линия растёт вместе с доходом */
+const cumul=a=>{let t=0;return [0,...a.map(v=>t+=Math.max(0,v))]};
 function spark(vals){if(vals.length<2)return'';const mx=Math.max(...vals,1),n=vals.length;
   const P=vals.map((v,i)=>[i/(n-1)*100,30-v/mx*25]);const f1=x=>x.toFixed(1);
   /* плавная линия: между точками кривая с горизонтальными касательными */
@@ -1032,7 +1034,7 @@ function vHome(){
   const k=mkey(TODAY);
   return top('@brand')+`<main>
     <div class="sum3">
-      <div class="card wide hero"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div>${spark([-7,-6,-5,-4,-3,-2,-1,0].map(i=>monthInc(mkey(addMonths(TODAY.slice(0,8)+'01',i)))))}<div class="note num">из ${rub(m.expected)} ожидаемых</div>
+      <div class="card wide hero"><div><div class="label">Получено за ${MONTHS[T.getMonth()]}</div><div class="big num">${rub(m.received)}</div></div>${spark(cumul([-7,-6,-5,-4,-3,-2,-1,0].map(i=>monthInc(mkey(addMonths(TODAY.slice(0,8)+'01',i))))))}<div class="note num">из ${rub(m.expected)} ожидаемых</div>
         <div class="bar" style="width:100%" role="img" aria-label="Получено ${pct}%"><i style="width:${pct}%"></i></div></div>
       <div class="card"><div class="label">Долги</div><div class="big num" style="font-size:20px;color:${m.totalDebt?'var(--bad)':'inherit'}">${rub(m.totalDebt)}</div></div>
       <div class="card"><div class="label">Объектов</div><div class="big num" style="font-size:20px">${S.objects.length}</div></div>
@@ -1216,7 +1218,7 @@ function vFinance(){
   const tot=rows.reduce((a,r)=>({inc:a.inc+r.inc,exp:a.exp+r.exp,com:a.com+r.com,net:a.net+r.net}),{inc:0,exp:0,com:0,net:0});
   const ag=S.role==='agent';const F=ui.fin;
   const cats={};rows.forEach(r=>r.exps.forEach(e=>{const c=e.cat==='Коммуналка'?'Коммунальные платежи':e.cat;cats[c]=(cats[c]||0)+e.amount}));
-  const sp=Rg.months.length>=2?spark(Rg.months.map(k=>{let v=0;S.objects.forEach(o=>{const f=periodFin(o,k+'-01',k+'-31');v+=f.inc});return v})):'';
+  const spM=Rg.months.filter(k=>k<=mkey(TODAY));const sp=spM.length>=2?spark(cumul(spM.map(k=>{let v=0;S.objects.forEach(o=>{const f=periodFin(o,k+'-01',k+'-31');v+=f.inc});return v}))):'';
   const owners=[...new Set([...(S.owners||[]).map(w=>w.name),...S.objects.map(o=>o.owner).filter(Boolean)])];
   return top('Финансы')+`<main>
     <div class="seg four" role="group" aria-label="Период">${[['month','Месяц'],['quarter','Квартал'],['year','Год'],['custom','Период']].map(([k,l])=>`<button data-finmode="${k}" aria-pressed="${F.mode===k}">${l}</button>`).join('')}</div>
