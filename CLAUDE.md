@@ -54,6 +54,14 @@
 35. **Заставка и знак «Порог»** (рабочее название в прототипе, окончательно не утверждено): при запуске ~2,3 с на зелёном фоне за ~1,6 с рисуется арка, под ней выезжает салатовая линия-порог, появляется ручка двери и надпись «Порог» и под ним «Учёт аренды» (с большой буквы), логотип держится ~0,7 с, затем заставка тает и экран входа появляется со своей анимацией (`#splash`; при `prefers-reduced-motion` не показывается). Знак `logo()` — на экране входа и в шапке Главной; иконки приложения (`icon-*.png`, `apple-touch-icon.png`) и `manifest.webmanifest` — «Порог». В английском — Porog / Rental manager.
 37. **Короткий адрес** (`shortAddr()`): в заголовке карточки и списках город отрезается, только если первая часть адреса не похожа на улицу или дом (ул., д., пр-т, цифры и т.п.) — иначе адрес вроде «ул. Горького, д. 79к1» терял улицу.
 36. **Новый объект с договором, начатым раньше:** галочка «оплаты за прошлые месяцы уже получены» (включена по умолчанию) отмечает прошедшие месяцы оплаченными в срок и с чеком НПД — иначе у нового пользователя сразу появляется ложный долг. Пустые состояния: «Объектов пока нет…», простой без объектов — «—», график на Главной без доходов не рисуется.
+38. **Правки по внешней проверке кода (9 ноября):**
+    - показания (и свои, и задним числом) сверяются с соседними по дате: не меньше предыдущих, не больше следующих;
+    - фото чека подтверждённой оплаты хранится один раз (`o.receipts`), месяцы ссылаются на него (`receiptId`); в строке месяца — кнопка «Чек»; старые копии в месяцах переносятся сами;
+    - переплата арендатора при подтверждении уходит в следующие месяцы как предоплата, а не теряется;
+    - всё, что приходит из файла копии или хранилища, проходит `cleanData()`: фото и файлы — только настоящие картинки и PDF (`safeImg`, `IMG_RE`, `PDF_RE`), числа приводятся к числам; все `src` в разметке — через `esc(safeImg(...))`;
+    - код входа хранится как SHA-256 с солью (`sha256()`, `pinOk()`, `hasPin()`); старые коды переводятся сами;
+    - суммы оплат округляются до копеек на входе (`kop()`); график платежей — до 50 лет; у арендатора «Внесено X из [сумма месяца]»;
+    - не подтвердилось (проверено): белый экран на «Счётчиках» при одном показании, дубль события в ленте, «шрифты не кешируются».
 
 ## Дизайн-система прототипа
 
@@ -116,7 +124,7 @@
 ## Модель данных (как в прототипе)
 
 ```js
-S = { v: 1, owners: [{ id, name, phone, birth, passport, issued, reg, bank, account, card, commission, note }] /* агент */, tax: 'npd'|'ndfl'|'usn', backupAt, help: { hide? }, feedback: [{ id, date, type: 'idea'|'need'|'bug', text, contact, from }], votes: { [roadmapKey]: true }, payouts: [{ id, owner, amount, date, note, pFrom, pTo, pLabel }], lock: { mode: 'none'|'pin'|'bio', pin, cred? /* WebAuthn */, sim? }, user: { phone /* 10 цифр */, name }, session: { mode: 'landlord' } | { mode: 'tenant', objId, phone } | null, role: 'private' | 'agent', npd: true /* самозанятый */, me: { landlord, city } /* данные для новых договоров */, objects: [Obj] }
+S = { v: 1, owners: [{ id, name, phone, birth, passport, issued, reg, bank, account, card, commission, note }] /* агент */, tax: 'npd'|'ndfl'|'usn', backupAt, help: { hide? }, feedback: [{ id, date, type: 'idea'|'need'|'bug', text, contact, from }], votes: { [roadmapKey]: true }, payouts: [{ id, owner, amount, date, note, pFrom, pTo, pLabel }], lock: { mode: 'none'|'pin'|'bio', salt, pinHash /* SHA-256(salt:код), сами цифры не хранятся */, cred? /* WebAuthn */, sim? }, user: { phone /* 10 цифр */, name }, session: { mode: 'landlord' } | { mode: 'tenant', objId, phone } | null, role: 'private' | 'agent', npd: true /* самозанятый */, me: { landlord, city } /* данные для новых договоров */, objects: [Obj] }
 
 Obj = {
   id, type: 'long' | 'short', kind: 'flat' | 'room' | 'house' /* нет — значит квартира */, name /* адрес */, area, rooms,
@@ -125,7 +133,7 @@ Obj = {
   tenant: { name, phone, birth, passport, issued, reg, cohab },
   landlord: { name, birth, phone, passport, issued, reg, account, card, bank },   // наймодатель (у агента — собственник)
   contract: { start, end, deposit, penalty /* пени, % в день */, city, sign /* дата договора */, floor, util: { el, water, heat } /* 'tenant'|'landlord' — кто платит */, keys, keysIntercom },  // даты 'YYYY-MM-DD'
-  payments: { 'YYYY-MM': { amount /* сумма частей */, date, parts: [{ amount, date }], npd?, extra?: [{ id, amount, note, meterId }] /* коммунальные арендатору */, claimed?: { amount, date, photo }, rejected?, receipt? } },
+  payments: { 'YYYY-MM': { amount /* сумма частей */, date, parts: [{ amount, date }], npd?, extra?: [{ id, amount, note, meterId }] /* коммунальные арендатору */, claimed?: { amount, date, photo }, rejected?, receiptId? } },
   dep: { got: { amount, date } | null, holds: [{ id, amount, reason, date }], back: { amount, date } | null },   // залог
   inventory: [{ id, name, model, size, color, qty, state: 'ok'|'worn'|'broken', note, photo? }],   // опись
   invite, invited?, // код приглашения арендатора (long); invited — арендодатель открывал приглашение
@@ -138,6 +146,7 @@ Obj = {
   bookings: [{ id, guest, from, to, sum, paidAmt, parts: [{ amount, date }], npd? }],   // short
   rentHist: [{ from: 'YYYY-MM', rent }],            // изменения платы
   docs: [{ id, name, cat, type, data /* dataURL */, size, date }],   // файлы объекта
+  receipts: [{ id, date, amount, photo }],          // чеки подтверждённых оплат арендатора — один раз; месяц ссылается на чек через payments[k].receiptId
   owner, commission                                  // agent: собственник, % комиссии
 }
 ```
@@ -194,6 +203,16 @@ Obj = {
 5. **ИП** — к платным тарифам: регистрация, УКЭП или VK Бизнес ID, расчётный счёт.
 6. **RuStore:** аккаунт разработчика, закрытый тест, публикация бесплатной версии, затем подписки.
 7. Интеграции с Авито и Циан (см. ниже) — v3.
+
+## При переносе на Flutter — заложить с самого начала (по итогам проверки кода)
+
+- Данные отдельно от экранов: слой данных (репозитории), действия — отдельные функции; сохранение в одном месте после каждого изменения.
+- Единая проверка всего, что приходит с сервера и из файлов: типы, диапазоны, длина строк, белый список полей.
+- Деньги — целые копейки; оплаты — список операций (внесено / заявлено / подтверждено / отклонено) вместо полей amount + parts + claimed.
+- Тесты на расчёты: график платежей и долг (`schedule`, `dueOf`), коммунальные (`utilBill`), пени, налог с границами шкалы, суммы прописью в договоре.
+- Сборка Word — отдельный модуль (при необходимости в фоне, чтобы не подвисал экран).
+- Код входа и сессия — в защищённом хранилище телефона (`flutter_secure_storage`), биометрия — `local_auth`.
+- Перевод — файлы ARB, а не подмена текста на экране.
 
 ## Уведомления — план (8 ноября 2026, не реализовано)
 
