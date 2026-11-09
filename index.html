@@ -59,6 +59,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 button,input,select{font:inherit;color:inherit}
 input,select,textarea,.f input,.f select{font-size:16px}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* место под полосу прокрутки держим всегда: иначе на компьютере короткий список без полосы шире длинного, и меню с карточками «прыгают» вбок */
+html{scrollbar-gutter:stable}
 .seg button{white-space:nowrap;padding-inline:4px}
 .sheet{overscroll-behavior:contain;touch-action:pan-y}
 .sheet::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:-8px auto 2px;flex:none}
