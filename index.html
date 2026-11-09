@@ -263,6 +263,8 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .segopt>.sr{left:0;top:0;pointer-events:none}
 .segopt:has(input:checked){background:var(--pill);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgb(0 0 0/.12)}
 .segopt:has(input:focus-visible){outline:2px solid var(--accent)}
+#updbar{white-space:nowrap;position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:0 10px 30px -10px rgb(0 0 0/.45);max-width:calc(100% - 24px)}
+#updbar button{border:0;border-radius:999px;padding:7px 14px;font:600 14px var(--body);background:var(--lime);color:#1B3015;cursor:pointer;white-space:nowrap}
 .offbar{position:sticky;top:0;z-index:25;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:500;text-align:center;padding:8px 16px}
 .hint{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;background:none;color:inherit;opacity:.7;font:700 12px/1 var(--body);cursor:pointer;vertical-align:1px;padding:0;margin-left:2px}
 .hint:hover,.hint.pressed{opacity:1}
@@ -2124,6 +2126,13 @@ root.addEventListener('change',async e=>{
 });
 /* офлайн: сохраняем приложение на телефоне (только по https или localhost — на GitHub Pages) */
 let installPrompt=null;ui.offline={ready:false,can:'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')};
+/* Проверка обновлений: открытая вкладка сама не перезагружается. Запоминаем версию (V из sw.js) при запуске,
+   при возвращении во вкладку и раз в 5 минут сверяем; если на сайте новее — полоса «Вышло обновление» */
+(function(){if(!/^https?:$/.test(location.protocol))return;let base=null;
+  const ver=()=>fetch('sw.js?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>(t.match(/const V='([^']+)'/)||[])[1]||null).catch(()=>null);
+  const check=()=>ver().then(v=>{if(!v)return;if(!base){base=v;return}if(v!==base&&!document.getElementById('updbar')){const b=document.createElement('div');b.id='updbar';b.setAttribute('role','status');
+    b.innerHTML=`<span>${LANG==='en'?'Update available':'Есть обновление'}</span><button type="button">${LANG==='en'?'Update':'Обновить'}</button>`;b.querySelector('button').onclick=()=>location.reload();document.body.appendChild(b)}});
+  check();document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});addEventListener('focus',check);setInterval(check,5*60*1000)})();
 if(ui.offline.can){navigator.serviceWorker.register('sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{ui.offline.ready=true;if(ui.view==='settings')render()}).catch(()=>{ui.offline.can=false})}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if(ui.view==='settings')render()});
 addEventListener('appinstalled',()=>{installPrompt=null;toast('Приложение установлено на телефон')});
