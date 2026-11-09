@@ -489,6 +489,9 @@ let S=load();
 const ui={fin:{mode:'month',anchor:mkey(TODAY),from:addDays(TODAY,-89),to:TODAY},view:'home',objId:null,tab:null,filter:'all',sheet:null,err:'',photo:null,meterId:null,payRef:null,invId:null};
 /* вход: ссылка вида ?invite=КОД сразу открывает шаг арендатора */
 const INVITE_Q=(new URLSearchParams(location.search).get('invite')||'').toUpperCase();
+/* демо-код для пробы страницы-приглашения (i.html?c=DEMO24): ведёт в первую долгосрочную квартиру с арендатором */
+const DEMO_INV='DEMO24';
+const invObj=c=>S.objects.find(o=>o.invite===c)||(c===DEMO_INV?S.objects.find(o=>o.type==='long'&&o.tenant&&o.tenant.name)||S.objects.find(o=>o.type==='long'):null);
 ui.locked=!!(S.session&&S.lock&&S.lock.mode&&S.lock.mode!=='none');ui.pin='';
 ui.auth={step:INVITE_Q&&!(S.session)?'invite':'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:INVITE_Q,sent:0,name:''};
 /* Сжимаем фото счётчика до ~900 px, чтобы оно помещалось в хранилище браузера */
@@ -1026,11 +1029,11 @@ function vAuth(){const A=ui.auth,st=A.step,err=ui.err?`<div class="err">${esc(ui
     ${err}<button class="btn wide" type="submit">Начать работу</button>
     <p class="note">Роль можно сменить позже в профиле.</p></form>`}
 function authSubmit(name,g){const A=ui.auth;
-  if(name==='auth-invite'){const c=(g('a_inv')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');A.invite=c;if(!S.objects.some(o=>o.invite===c))return'Код не найден. Проверьте его в сообщении арендодателя.';A.mode='tenant';A.step='phone';return}
+  if(name==='auth-invite'){const c=(g('a_inv')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');A.invite=c;if(!invObj(c))return'Код не найден. Проверьте его в сообщении арендодателя.';A.mode='tenant';A.step='phone';return}
   if(name==='auth-phone'){let d=(g('a_phone')||'').replace(/\D/g,'');if(d.length>10&&/^[78]/.test(d))d=d.slice(1);A.phone=d;A.ok=!!g('a_ok');
     if(d.length!==10)return'Введите номер полностью: 10 цифр после +7.';if(!A.ok)return'Без согласия на обработку данных войти нельзя.';A.step='code';A.sent=Date.now();return}
   if(name==='auth-code'){if((g('a_code')||'').replace(/\D/g,'').length!==4)return'Введите 4 цифры из СМС.';
-    if(A.mode==='tenant'){const o=S.objects.find(x=>x.invite===A.invite);S.session={mode:'tenant',objId:o.id,phone:A.phone};ui.view='tenant';ui.objId=o.id;toast('Вы вошли как арендатор');return}
+    if(A.mode==='tenant'){const o=invObj(A.invite);S.session={mode:'tenant',objId:o.id,phone:A.phone};ui.view='tenant';ui.objId=o.id;toast('Вы вошли как арендатор');return}
     if(S.user&&S.user.phone===A.phone){S.session={mode:'landlord'};ui.view='home';toast('С возвращением, '+S.user.name.split(' ')[0]+'!');return}
     A.step='reg';return}
   if(name==='auth-reg'){A.name=(g('a_name')||'').trim();A.role=g('a_role');if(A.name.length<2)return'Напишите, как к вам обращаться.';
@@ -1532,6 +1535,7 @@ function sheet(){
     <h3>Пригласить арендатора</h3><p class="note">Отправьте арендатору код или ссылку. Он войдёт по своему номеру телефона и сразу попадёт в эту квартиру — без регистрации.</p>
     <div class="invcode">${o.invite}</div>
     <button class="btn wide" data-act="copyInvite">Скопировать приглашение</button>
+    <p class="note">По ссылке арендатор увидит свой вариант: с Android — установка из RuStore, с iPhone — как добавить «Порог» на экран «Домой».</p>
     <button class="btn ghost wide" data-act="close">Готово</button></div></div>`;
   return `<div class="scrim" data-act="close"><form class="sheet" role="dialog" data-form="${s}" data-stop novalidate>${h}
     ${ui.err?`<div class="err">${esc(ui.err)}</div>`:''}
@@ -1836,7 +1840,7 @@ Object.assign(EN,{'Объявление':'Listing','Файлы':'Files','Изм�
 'Оценка по выбранному в Настройках режиму: НПД 4%, НДФЛ 13% (с 2,4 млн ₽ в год — выше), ИП на УСН «доходы» 6%. Вычеты, расходы и региональные ставки не учитываются — это ориентир, а не расчёт для декларации.':'Estimated by the regime chosen in Settings: NPD 4%, PIT 13% (higher above 2.4 mln ₽ a year), sole trader on simplified “income” 6%. Deductions, expenses and regional rates are not included — this is a guide, not a tax-return calculation.',
 'Напоминать о чеке НПД':'Remind about NPD receipts','после каждой оплаты':'after each payment',
 'Резервная копия':'Backup','Сейчас все данные хранятся только на этом телефоне. Сохраните копию в файл — например, в облако или себе в мессенджер, — и сможете восстановить её на новом телефоне.':'Right now all data is stored only on this phone. Save a copy to a file — e.g. to the cloud or send it to yourself in a messenger — and you can restore it on a new phone.',
-'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Порога»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Порог':'Porog','Учёт аренды':'Rental manager','Порог — учёт аренды':'Porog — rental manager','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
+'Сохранить в файл':'Save to file','Восстановить из файла':'Restore from file','Текущие данные на этом телефоне заменятся данными из файла.':'Current data on this phone will be replaced with data from the file.','Заменить данные':'Replace data','Данные восстановлены из файла':'Data restored from file','Это не файл копии «Порога»':'This is not a backup file of this app','Копия сохранена в файл':'Backup saved to file','Вы вошли как арендодатель — показываем, как квартиру увидит арендатор':'You’re signed in as the landlord — showing how the tenant will see this home','По ссылке арендатор увидит свой вариант: с Android — установка из RuStore, с iPhone — как добавить «Порог» на экран «Домой».':'The link shows each tenant their own path: on Android — install from RuStore, on iPhone — how to add Porog to the Home Screen.','Порог':'Porog','Учёт аренды':'Rental manager','Порог — учёт аренды':'Porog — rental manager','Добавить собственника':'Add owner','Собственников пока нет. Добавьте собственника — его данные попадут в договоры его объектов.':'No owners yet. Add an owner — their details will go into the leases of their properties.',
 'Данные собственника':'Owner details','Новый собственник':'New owner','Изменить данные':'Edit details','Телефон':'Phone','Паспорт':'Passport','Реквизиты':'Bank details','Комиссия':'Commission','Заметка':'Note','Привязать объекты':'Link properties','Объекты собственника':'Owner’s properties',
 'Объектов пока нет. Привяжите объекты — данные собственника попадут в их договоры.':'No properties yet. Link properties — the owner’s details will go into their leases.',
 'Собственник — наймодатель в договорах его объектов. Данные сразу подставятся в эти договоры.':'The owner is the landlord in the leases of their properties. The details are filled into those leases right away.',
@@ -2003,7 +2007,7 @@ function onTap(e){
     else if(a==='switchRole'){S.role=S.role==='agent'?'private':'agent';save();toast('Роль изменена')}
     else if(a==='docx'){downloadContract(o);toast('Договор скачан')}
     else if(a==='invite'){o.invited=true;ui.sheet='invite';ui.err='';save()}
-    else if(a==='copyInvite'){const link=location.origin+location.pathname+'?'+(NEWMODE?'new&':'')+'invite='+o.invite;const txt=`Приглашение в приложение «Порог»: ${link} — или введите код ${o.invite} на первом экране.`;
+    else if(a==='copyInvite'){const link=location.origin+location.pathname.replace(/[^/]*$/,'')+'i.html?c='+o.invite+(NEWMODE?'&new':'');const txt=`Приглашение в приложение «Порог» для квартиры ${o.name}: ${link}\nКод приглашения: ${o.invite}`;
       (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Приглашение скопировано'),()=>toast('Код приглашения: '+o.invite))}
     else if(a==='logout'){S.session=null;ui.sheet=null;ui.view='home';ui.auth={step:'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:'',sent:0,name:''};M.auth=null;save();window.scrollTo(0,0)}
     else if(a==='install'){if(installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;render()})}return}
@@ -2110,6 +2114,8 @@ if(ui.offline.can){navigator.serviceWorker.register('sw.js').then(()=>navigator.
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if(ui.view==='settings')render()});
 addEventListener('appinstalled',()=>{installPrompt=null;toast('Приложение установлено на телефон')});
 addEventListener('online',()=>{toast('Интернет снова есть');render()});addEventListener('offline',()=>{toast('Нет интернета — работаем офлайн');render()});
+/* приглашение открыто на телефоне, где уже вошёл арендодатель: не выходим из аккаунта, а показываем экран арендатора */
+if(INVITE_Q&&S.session&&S.session.mode==='landlord'){const o=invObj(INVITE_Q);if(o){ui.objId=o.id;ui.view='tenant';setTimeout(()=>toast('Вы вошли как арендодатель — показываем, как квартиру увидит арендатор'),2600)}}
 render();
 /* заставка: ~2,3 с, затем экран входа (или Главная) появляется со своей анимацией */
 (function(){const sp=document.getElementById('splash');if(!sp)return;if(RM.matches){sp.remove();return}
