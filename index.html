@@ -256,7 +256,8 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .cd.busy{background:color-mix(in srgb,var(--night) 20%,var(--surface-2));color:var(--night);font-weight:600;border-radius:4px}.cd.busy.s{border-radius:10px 4px 4px 10px}.cd.busy.e{border-radius:4px 10px 10px 4px}.cd.busy.s.e{border-radius:10px}
 .cd:active{transform:scale(.9)}.cd.pressed{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
 .flab{font-size:13px;color:var(--muted)}
-.segopt{position:relative;display:grid;place-items:center;border-radius:999px;padding:8px;cursor:pointer;color:var(--muted);font-size:14px}
+.segopt{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;white-space:nowrap;border-radius:999px;padding:8px 4px;cursor:pointer;color:var(--muted);font-size:14px}
+.segopt>.sr{left:0;top:0;pointer-events:none}
 .segopt:has(input:checked){background:var(--pill);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgb(0 0 0/.12)}
 .segopt:has(input:focus-visible){outline:2px solid var(--accent)}
 .offbar{position:sticky;top:0;z-index:25;background:var(--warn-soft);color:var(--warn);font-size:13px;font-weight:500;text-align:center;padding:8px 16px}
@@ -973,6 +974,8 @@ const ICON={
   profile:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'};
 const LOGO_SVG='<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M15 37V21a9 9 0 0 1 18 0v16" stroke="#EEF4EA" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 38h29" stroke="#9BD98A" stroke-width="4" stroke-linecap="round"/><circle cx="27.6" cy="28" r="1.7" fill="#EEF4EA"/></svg>';
 const logo=px=>`<span class="logo" style="width:${px}px;height:${px}px">${LOGO_SVG}</span>`;
+const STREETY=/(^|\s)(ул|улица|пр|пр-т|просп|проспект|пер|переулок|ш|шоссе|б-р|бульвар|наб|набережная|пл|площадь|д|дом|кв|мкр|стр|корп|к|тупик|проезд|аллея)\.?(\s|$)|\d/i;
+const shortAddr=(name,n)=>{const p=String(name||'').split(',').map(x=>x.trim()).filter(Boolean);const q=p.length>1&&!STREETY.test(p[0])?p.slice(1):p;return(n?q.slice(0,n):q).join(', ')||name};
 function top(title,back){return `${navigator.onLine?'':'<div class="offbar" role="status">Нет интернета — работаем офлайн. Всё сохраняется на телефоне.</div>'}<header class="top">${back?`<button class="back" data-act="back" aria-label="Назад">←</button>`:''}${title==='@brand'?`<div class="brand">${logo(34)}<h1>Порог</h1></div>`:`<h1>${esc(title)}</h1>`}<span class="proto">прототип</span></header>`}
 function nav(){const it=[['home','Главная'],['objects','Объекты'],['finance','Финансы'],['profile','Профиль']];
   const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view==='settings'||ui.view==='help'?'profile':ui.view==='owner'?'finance':ui.view;
@@ -1177,7 +1180,7 @@ function vObject(){
     <button class="btn wide" data-act="addInv">Добавить предмет</button>
     <p class="note">${o.type==='long'?'Опись с фото и состоянием попадает в передаточный акт и помогает решить спор о залоге при выезде.':'Сверяйте опись после выезда гостя: что на месте и в каком состоянии.'}</p>`;
   }
-  return top(o.name.split(',').slice(1).join(',').trim()||o.name,true)+`<main>
+  return top(shortAddr(o.name),true)+`<main>
     <div class="card objhead">${objIco(o)}<div style="flex:1;min-width:0"><div class="type">${KIND[kindOf(o)][0]} · ${o.type==='long'?'долгосрочно':'посуточно'}</div><div style="font-weight:600;overflow-wrap:anywhere">${esc(o.name)}</div>
       <div class="meta num" style="margin-top:6px"><span>${o.area} м²</span>${kindOf(o)==='room'?'':`<span>${o.rooms} комн.</span>`}<span class="pill ${c}">${esc(st)}</span></div></div>
       <div class="acts"><button class="btn small ghost" data-act="kind" aria-label="Изменить вид недвижимости">Вид</button><button class="btn small ghost" data-act="ad">Объявление</button></div></div>
@@ -1250,7 +1253,7 @@ function vFinance(){
       <div class="card"><div class="label">Прогноз на 3 месяца</div><div class="big num" style="font-size:20px">${rub(fc.sum)}</div><div class="note">${fc.parts.map(([k,x])=>`${MON_S[Number(k.slice(5))-1]} ${rub(x)}`).join('<br>')}</div></div></div>
       <div class="card total"><div><div class="label">Налог за период, оценка ${hint('tax')}</div><div class="note">${TAX[tm][0]} ${TAX[tm][1]} от ${ag?'комиссии':'дохода'} ${rub(base)} · режим меняется в Настройках</div></div><div class="big num" style="font-size:20px">${rub(tx)}</div></div>`})()}
     <h2>По объектам</h2>
-    <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(r.o.name.split(',').slice(1,3).join(',').trim()||r.o.name)}</div>
+    <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(shortAddr(r.o.name,2))}</div>
       <div class="s num">доход ${rub(r.inc)} · расходы ${rub(r.exp)}${ag?' · комиссия '+rub(r.com):''}</div></div><b class="num" style="white-space:nowrap">${rub(r.net)}</b></div>`).join('')}</div>
     <h2>Расходы по категориям</h2>
     <div class="list">${Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="row">${catIco(c)}<div class="main"><div class="t">${esc(c)}</div><div class="bar" style="margin-top:6px"><i style="width:${tot.exp?Math.round(v/tot.exp*100):0}%"></i></div></div><b class="num" style="white-space:nowrap">${rub(v)}</b></div>`).join('')||'<div class="row note">Расходов за период нет</div>'}</div>
@@ -1293,7 +1296,7 @@ function vOwner(){const w=ui.owner;const Rg=finRange();const ob=S.objects.filter
       <dl class="kv" style="margin-top:10px"><dt>Телефон</dt><dd>${OW.phone?`<a href="tel:${esc(OW.phone.replace(/[^+\d]/g,''))}">${esc(OW.phone)}</a>`:'—'}</dd><dt>Паспорт</dt><dd>${esc(OW.passport)||'—'}</dd><dt>Реквизиты</dt><dd>${[OW.bank,OW.account&&'счёт '+OW.account,OW.card&&'карта '+OW.card].filter(Boolean).map(esc).join(' · ')||'—'}</dd><dt>Комиссия</dt><dd>${filled(OW.commission)?esc(OW.commission)+'%':'—'}</dd>${OW.note?`<dt>Заметка</dt><dd>${esc(OW.note)}</dd>`:''}</dl><button class="btn ghost wide" style="margin-top:12px" data-act="ownerEdit">Изменить данные</button></div>
     <h2>Объекты</h2>
     ${ob.length?'':'<div class="card note">Объектов пока нет. Привяжите объекты — данные собственника попадут в их договоры.</div>'}
-    <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(r.o.name.split(',').slice(1,3).join(',').trim()||r.o.name)}</div><div class="s num">получено ${rub(r.inc)} · расходы ${rub(r.exp)} · комиссия ${rub(r.com)} (${r.o.commission||0}%)</div></div><b class="num" style="white-space:nowrap">${rub(r.net)}</b></div>`).join('')}</div>
+    <div class="list">${rows.map(r=>`<div class="row tap" tabindex="0" data-open="${r.o.id}">${objIco(r.o,'sm')}<div class="main"><div class="t">${esc(shortAddr(r.o.name,2))}</div><div class="s num">получено ${rub(r.inc)} · расходы ${rub(r.exp)} · комиссия ${rub(r.com)} (${r.o.commission||0}%)</div></div><b class="num" style="white-space:nowrap">${rub(r.net)}</b></div>`).join('')}</div>
     <button class="btn ghost wide" data-act="ownerLink">Привязать объекты</button>
     ${ob.length?'<button class="btn wide" data-act="ownerDocx">Скачать отчёт (Word)</button>':''}
     <button class="btn ghost wide" data-act="payout">Отметить выплату</button>
@@ -1888,8 +1891,9 @@ const DEPTH={home:0,objects:0,finance:0,profile:0,object:1,tenant:2,settings:1,o
 const TABS=['contract','book','pay','meters','exp','inv','req','docs'];
 const M={key:null,view:null,tab:null,sheet:null,ind:{},nav:false,auth:null};
 function stagger(els,dx,dy,from=0){els.forEach((el,n)=>{el.classList.add('a');el.style.setProperty('--i',from+n);el.style.setProperty('--dx',dx);el.style.setProperty('--dy',dy)})}
-function countUp(el){const txt=el.textContent;const to=parseInt(txt.replace(/[^\d-]/g,''),10);if(!to||RM.matches)return;const isRub=txt.includes('₽');const t0=performance.now();
-  const step=t=>{const k=Math.min(1,(t-t0)/800);const e=1-Math.pow(1-k,3);const v=Math.round(to*e);el.textContent=isRub?rub(v):String(v);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+function countUp(el){const txt=el.textContent;const m=txt.match(/^([^\d-]*)(-?\d(?:[\d\s\u00a0]*\d)?)([\s\S]*)$/);if(!m||RM.matches)return;
+  const to=parseInt(m[2].replace(/[^\d-]/g,''),10);if(!to)return;const grp=/[\s\u00a0]/.test(m[2]);const t0=performance.now();
+  const step=t=>{const k=Math.min(1,(t-t0)/800);const e=1-Math.pow(1-k,3);const v=Math.round(to*e);el.textContent=m[1]+(grp?v.toLocaleString('ru-RU'):String(v))+m[3];if(k<1)requestAnimationFrame(step);else el.textContent=txt};requestAnimationFrame(step)}
 /* подсветка-пилюля: ставим на прошлое место без анимации, потом плавно переводим на новое */
 function slide(box,key){const on=box.querySelector('[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]');if(!on)return;
   const ind=document.createElement('span');ind.className='ind';box.prepend(ind);
