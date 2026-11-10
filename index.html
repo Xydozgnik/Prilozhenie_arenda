@@ -315,6 +315,8 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .objhead .acts{align-self:flex-start}
 /* Матовые карточки: полупрозрачный градиент, светлая кромка, мягкая тень */
 .card,.list,.ut,.tabs,.chip,.back{background:var(--card);border:1px solid var(--edge);box-shadow:var(--shadow)}
+/* карточки рисуются по порядку: нижние ложатся поверх тени верхних (раньше это делало размытие фона) */
+.card,.list{position:relative}
 .ut{border-top:3px solid var(--t)}
 .list .row{border-top-color:var(--line)}
 /* Главный блок экрана — глубокий зелёный, как карточка «Readiness» в образце */
