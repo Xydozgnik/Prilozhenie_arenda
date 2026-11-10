@@ -414,16 +414,16 @@ function applyLang(){MONTHS.splice(0,12,...(LANG==='en'?MONTHS_EN:MONTHS_RU));MO
 applyLang();
 const pad=n=>String(n).padStart(2,'0');
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c||1)};
+const parse=s=>{if(typeof s!=='string')return new Date(NaN);const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c||1)};
 const T=new Date();T.setHours(0,0,0,0);const TODAY=ymd(T);
 const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d)};
 const addMonths=(s,n)=>{const d=parse(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return ymd(d)};
 const mkey=s=>s.slice(0,7);
 const daysBetween=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
 const rub=n=>(Math.round(n)||0).toLocaleString('ru-RU')+'\u00a0₽';
-const fdate=s=>{const d=parse(s);return d.getDate()+' '+MON_S[d.getMonth()]};
-const fdateY=s=>{const d=parse(s);return d.getDate()+' '+MON_S[d.getMonth()]+' '+d.getFullYear()};
-const mname=k=>{const[y,m]=k.split('-').map(Number);return MONTHS[m-1]+' '+y};
+const fdate=s=>{const d=parse(s);if(isNaN(d))return'—';return d.getDate()+' '+MON_S[d.getMonth()]};
+const fdateY=s=>{const d=parse(s);if(isNaN(d))return'—';return d.getDate()+' '+MON_S[d.getMonth()]+' '+d.getFullYear()};
+const mname=k=>{const[y,m]=String(k).split('-').map(Number);return MONTHS[m-1]?MONTHS[m-1]+' '+y:String(k)};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
 
@@ -485,11 +485,30 @@ function safeImg(u){return typeof u==='string'&&IMG_RE.test(u)?u:''}
 function cleanData(d){const num=(x,k)=>{if(x&&x[k]!=null&&x[k]!==''){const v=Number(x[k]);x[k]=isFinite(v)?v:0}};
   const ph=x=>{if(x&&x.photo!=null&&!safeImg(x.photo))delete x.photo};
   if(!Array.isArray(d.objects))d.objects=[];d.objects=d.objects.filter(o=>o&&typeof o==='object');
-  d.objects.forEach(o=>{['rent','area','rooms','payDay','commission'].forEach(k=>num(o,k));if(o.contract){num(o.contract,'deposit');num(o.contract,'penalty');num(o.contract,'keys');num(o.contract,'keysIntercom')}
+  const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);const dateOk=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x);
+  d.objects.forEach(o=>{if(o.type!=='short')o.type='long';if(!o.id)o.id=uid();o.name=String(o.name??'');
+    if(!isObj(o.payments))o.payments={};if(!isObj(o.tenant))o.tenant={name:'',phone:''};if(!isObj(o.contract))o.contract={start:'',end:'',deposit:0};if(!isObj(o.tariffs))o.tariffs={};
+    ['meters','inventory','requests','receipts','expenses','bookings','docs','rentHist'].forEach(a=>{if(o[a]!=null&&!Array.isArray(o[a]))o[a]=[];if(Array.isArray(o[a]))o[a]=o[a].filter(isObj)});
+    ['start','end','sign'].forEach(k=>{if(o.contract[k]!=null&&!dateOk(o.contract[k]))o.contract[k]=''});
+    if(isObj(o.contract.util))['el','water','heat'].forEach(k=>{if(!['tenant','landlord'].includes(o.contract.util[k]))o.contract.util[k]='tenant'});
+    Object.entries(o.payments).forEach(([k,r])=>{if(!isObj(r)){delete o.payments[k];return}num(r,'amount');if(!Array.isArray(r.parts))r.parts=[];
+      if(r.amount>0&&!dateOk(r.date))r.date=(r.parts.map(x=>x.date).filter(dateOk).pop())||(k+'-01')});
+    (o.meters||[]).forEach(m=>{['cold','hot','el','el1','el2','el3'].forEach(k=>{if(m[k]!=null)num(m,k)})});
+    (o.expenses||[]).forEach(e=>num(e,'amount'));(o.bookings||[]).forEach(b=>{num(b,'sum');num(b,'paidAmt')});
+    ['rent','area','rooms','payDay','commission'].forEach(k=>num(o,k));o.payDay=Math.min(31,Math.max(1,Math.round(o.payDay)||1));if(o.contract){num(o.contract,'deposit');num(o.contract,'penalty');num(o.contract,'keys');num(o.contract,'keysIntercom')}
     ['meters','inventory','requests','receipts'].forEach(a=>{if(Array.isArray(o[a]))o[a].forEach(ph)});
     if(Array.isArray(o.docs))o.docs=o.docs.filter(x=>x&&typeof x.data==='string'&&(IMG_RE.test(x.data)||PDF_RE.test(x.data)));
     Object.values(o.payments||{}).forEach(r=>{if(r&&r.claimed&&typeof r.claimed==='object')ph(r.claimed)})});
-  (d.owners||[]).forEach(w=>num(w,'commission'));return d}
+  const isO=x=>x&&typeof x==='object'&&!Array.isArray(x);
+  ['owners','payouts','feedback'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];d[k]=d[k].filter(isO)});if(!isO(d.votes))d.votes={};if(!isO(d.help))d.help={};if(!isO(d.me))d.me={landlord:{},city:''};if(d.lock!=null&&!isO(d.lock))delete d.lock;if(d.user!=null&&!isO(d.user))delete d.user;
+  d.owners=d.owners.filter(w=>typeof w.name==='string'&&w.name.trim());d.owners.forEach(w=>num(w,'commission'));d.payouts=d.payouts.filter(x=>dateOk(x.date));d.payouts.forEach(x=>num(x,'amount'));
+  const mkOk=k=>/^\d{4}-\d{2}$/.test(k);
+  d.objects.forEach(o=>{Object.keys(o.payments).forEach(k=>{if(!mkOk(k))delete o.payments[k]});
+    o.meters=(o.meters||[]).filter(m=>dateOk(m.date));o.bookings=(o.bookings||[]).filter(b=>dateOk(b.from)&&dateOk(b.to)&&b.to>b.from);o.rentHist=(o.rentHist||[]).filter(h=>mkOk(h.from)&&Number(h.rent)>0).map(h=>({from:h.from,rent:Number(h.rent)}));
+    (o.expenses||[]).forEach(e=>{if(!dateOk(e.date))e.date=TODAY;if(typeof e.cat!=='string')e.cat='Другое'});(o.requests||[]).forEach(r=>{if(!dateOk(r.date))r.date=TODAY;r.text=String(r.text??'');if(!['new','work','done'].includes(r.status))r.status='new'});
+    (o.docs||[]).forEach(x=>{if(!dateOk(x.date))x.date=TODAY;x.name=String(x.name??'')});(o.receipts||[]).forEach(x=>{if(!dateOk(x.date))x.date=TODAY});(o.inventory||[]).forEach(x=>{x.name=String(x.name??'');if(!['ok','worn','broken'].includes(x.state))x.state='ok'});
+    (o.bookings||[]).forEach(b=>{b.guest=String(b.guest??'');if(!Array.isArray(b.parts))b.parts=[]});if(!isO(o.dep))o.dep={got:null,holds:[],back:null};if(!Array.isArray(o.dep.holds))o.dep.holds=[];if(!isO(o.clean))o.clean={}});
+  return d}
 /* код входа храним не цифрами, а «отпечатком» SHA-256 с солью. Четыре цифры всё равно перебираются за секунды —
    это защита от случайного взгляда в хранилище; в рабочей версии код живёт в защищённом хранилище телефона */
 function sha256(str){const m=new TextEncoder().encode(str),K=[],H=[];
@@ -504,7 +523,7 @@ function sha256(str){const m=new TextEncoder().encode(str),K=[],H=[];
   return H.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('')}
 const hasPin=()=>!!(S.lock&&(S.lock.pinHash||S.lock.pin));
 const pinOk=p=>!!S.lock&&(S.lock.pinHash?sha256(S.lock.salt+':'+p)===S.lock.pinHash:S.lock.pin===p);
-function fixIds(d){cleanData(d);if(d.lock&&d.lock.pin&&!d.lock.pinHash){d.lock.salt=uid()+uid();d.lock.pinHash=sha256(d.lock.salt+':'+d.lock.pin);delete d.lock.pin}if(d.npd!==false)d.npd=true;d.owners=d.owners||[];(d.objects||[]).forEach(o=>{if(o.owner&&!d.owners.some(w=>w.name===o.owner))d.owners.push({id:uid(),name:o.owner,commission:o.commission||''})});d.payouts=d.payouts||[];d.help=d.help||{};d.feedback=d.feedback||[];d.votes=d.votes||{};d.objects.forEach(o=>{(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()});ensureContract(o,d.me);
+function fixIds(d){cleanData(d);if(d.lock&&d.lock.pin&&!d.lock.pinHash){d.lock.salt=uid()+uid();d.lock.pinHash=sha256(d.lock.salt+':'+String(d.lock.pin));delete d.lock.pin}if(d.npd!==false)d.npd=true;d.owners=d.owners||[];(d.objects||[]).forEach(o=>{if(o.owner&&!d.owners.some(w=>w.name===o.owner))d.owners.push({id:uid(),name:o.owner,commission:o.commission||''})});d.payouts=d.payouts||[];d.help=d.help||{};d.feedback=d.feedback||[];d.votes=d.votes||{};d.objects.forEach(o=>{(o.meters||[]).forEach(m=>{if(!m.id)m.id=uid()});ensureContract(o,d.me);
   (o.expenses||[]).forEach(e=>{if(e.cat==='Коммуналка')e.cat='Коммунальные платежи'});
   o.requests=o.requests||[];o.clean=o.clean||{};o.docs=o.docs||[];o.rentHist=o.rentHist||[];o.inventory=o.inventory||[];o.dep=o.dep||{got:null,holds:[],back:null};o.dep.holds=o.dep.holds||[];o.meters=o.meters||[];o.tariffs=o.tariffs||{cold:0,hot:0,el:0};
   Object.values(o.payments||{}).forEach(r=>{if(r.claimed===true)r.claimed={amount:Math.max(0,o.rent-(r.amount||0)),date:r.claimDate||TODAY};if(r.amount>0&&!r.parts)r.parts=[{amount:r.amount,date:r.date}]});
@@ -527,7 +546,7 @@ const INVITE_Q=(new URLSearchParams(location.search).get('invite')||'').toUpperC
 /* демо-код для пробы страницы-приглашения (i.html?c=DEMO24): ведёт в первую долгосрочную квартиру с арендатором */
 const DEMO_INV='DEMO24';
 const invObj=c=>S.objects.find(o=>o.invite===c)||(c===DEMO_INV?S.objects.find(o=>o.type==='long'&&o.tenant&&o.tenant.name)||S.objects.find(o=>o.type==='long'):null);
-ui.locked=!!(S.session&&S.lock&&S.lock.mode&&S.lock.mode!=='none');ui.pin='';
+ui.locked=!!(S.session&&S.session.mode==='landlord'&&S.lock&&S.lock.mode&&S.lock.mode!=='none');ui.pin='';
 ui.auth={step:INVITE_Q&&!(S.session)?'invite':'welcome',mode:'landlord',phone:S.user?S.user.phone:'',ok:false,invite:INVITE_Q,sent:0,name:''};
 /* Сжимаем фото счётчика до ~900 px, чтобы оно помещалось в хранилище браузера */
 function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
@@ -566,6 +585,7 @@ function objStatus(o){
     const s=schedule(o);if(!s.length)return['Нет платежей','p-mute'];
     if(s.some(x=>x.st==='late'))return['Долг '+rub(debt(o)),'p-bad'];
     if(s.some(x=>x.st==='claimed'))return['Проверьте оплату','p-warn'];
+    if(o.contract.end&&o.contract.end<TODAY)return['Договор истёк','p-warn'];
     return ST[s[0].st];
   }
   const now=(o.bookings||[]).find(b=>b.from<=TODAY&&b.to>TODAY);
@@ -576,7 +596,7 @@ function objStatus(o){
 function monthSummary(){
   const k=mkey(TODAY);let expected=0,received=0;
   S.objects.forEach(o=>{
-    if(o.type==='long'&&o.tenant.name&&o.contract.end>=TODAY.slice(0,8)+'01'){const am=dueOf(o,k);expected+=am;received+=Math.min(am,(o.payments[k]||{}).amount||0)}
+    if(o.type==='long'&&o.tenant.name&&o.contract.start&&mkey(o.contract.start)<=k&&(!o.contract.end||o.contract.end>=TODAY.slice(0,8)+'01')){const am=dueOf(o,k);expected+=am;received+=Math.min(am,(o.payments[k]||{}).amount||0)}
     if(o.type==='short')(o.bookings||[]).forEach(b=>{if(mkey(b.from)===k){expected+=b.sum;received+=Math.min(b.sum,paidOf(b))}});
   });
   const totalDebt=S.objects.reduce((a,o)=>a+(o.type==='long'?debt(o):0),0);
@@ -591,12 +611,13 @@ function events(){
         if(x.st==='claimed')ev.push({d:x.rec.claimed.date||TODAY,t:'Арендатор оплатил '+rub(x.rec.claimed.amount)+' — проверьте чек',s:short,c:'p-warn',i:'coin',id:o.id,tab:'pay'})});
       const nk=mkey(addMonths(TODAY.slice(0,8)+'01',1));const cur=schedule(o)[0];
       const nd=cur&&(cur.st==='due'||cur.st==='partial')?cur.due:dueDate(o,nk);
-      if(nd<=o.contract.end)ev.push({d:nd,t:'Оплата '+rub(dueOf(o,mkey(nd))),s:short,c:'p-info',i:'coin',id:o.id,tab:'pay'});
-      const left=daysBetween(TODAY,o.contract.end);
+      const ndLeft=dueOf(o,mkey(nd))-((o.payments[mkey(nd)]||{}).amount||0);
+      if((!o.contract.end||nd<=o.contract.end)&&ndLeft>0)ev.push({d:nd,t:'Оплата '+rub(ndLeft),s:short,c:'p-info',i:'coin',id:o.id,tab:'pay'});
+      const left=o.contract.end?daysBetween(TODAY,o.contract.end):-1;
       if(left>=0&&left<=45)ev.push({d:o.contract.end,t:'Конец договора через '+left+' дн.',s:short,c:'p-warn',i:'doc',id:o.id,tab:'contract'});
       (o.meters||[]).forEach(m=>{if(m.status==='check')ev.push({d:m.date,t:'Проверить показания по фото',s:short,c:'p-warn',i:'camera',id:o.id,tab:'meters'})});
       const md=TODAY.slice(0,8)+'20';const last=o.meters[o.meters.length-1];
-      if(md>=TODAY&&(!last||mkey(last.date)<mkey(TODAY)))ev.push({d:md,t:'Передать показания',s:short,c:'p-mute',i:'gauge',id:o.id,tab:'meters'});
+      if(md>=TODAY&&(!o.contract.end||o.contract.end>=TODAY)&&(!last||mkey(last.date)<mkey(TODAY)))ev.push({d:md,t:'Передать показания',s:short,c:'p-mute',i:'gauge',id:o.id,tab:'meters'});
     }
     if(S.npd!==false){const recs=o.type==='long'?Object.values(o.payments||{}):(o.bookings||[]);const nn=recs.filter(r=>(o.type==='long'?r.amount:paidOf(r))>0&&!r.npd&&daysBetween(o.type==='long'?r.date:(r.parts&&r.parts.length?r.parts[r.parts.length-1].date:r.from),TODAY)<=31).length;
       if(nn)ev.push({d:TODAY,t:'Выдайте чек НПД: '+nn+' '+plural(nn,['оплата','оплаты','оплат']),s:short,c:'p-warn',i:'receipt',id:o.id,tab:'pay'})}
@@ -604,7 +625,7 @@ function events(){
     if(o.type==='short')(o.bookings||[]).forEach(b=>{if(b.to<=TODAY&&daysBetween(b.to,TODAY)<=14&&!(o.clean||{})[b.id])ev.push({d:b.to,t:'Нужна уборка после: '+b.guest,s:short,c:'p-warn',i:'sparkle',id:o.id,tab:'book'})});
     if(o.type==='short')(o.bookings||[]).forEach(b=>{
       if(b.from>=TODAY&&daysBetween(TODAY,b.from)<=14)ev.push({d:b.from,t:'Заезд: '+b.guest,s:short,c:'p-ok',i:'key',id:o.id,tab:'book'});
-      if(b.to>=TODAY&&daysBetween(TODAY,b.to)<=14)ev.push({d:b.to,t:'Выезд и уборка: '+b.guest,s:short,c:'p-mute',i:'sparkle',id:o.id,tab:'book'});
+      if(b.to>TODAY&&daysBetween(TODAY,b.to)<=14)ev.push({d:b.to,t:'Выезд и уборка: '+b.guest,s:short,c:'p-mute',i:'sparkle',id:o.id,tab:'book'});
     });
   });
   return ev.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
@@ -707,7 +728,7 @@ function odo(v,u){const n=Number(v)||0;const fd=u==='м³'?2:1;const[a,b]=n.toFi
    вкладки, график платежей и текст договора. Word-файл собирается прямо в браузере. */
 const UTIL_WHO={tenant:'Наниматель',landlord:'Наймодатель'};
 function ensureContract(o,me){if(o.type!=='long')return o;o.contract=o.contract||{start:'',end:'',deposit:0};const c=o.contract;
-  c.util=c.util||{el:'tenant',water:'tenant',heat:'tenant'};if(c.keys==null)c.keys=1;if(c.keysIntercom==null)c.keysIntercom=1;
+  c.util=c.util||{el:'tenant',water:'tenant',heat:'tenant'};['el','water','heat'].forEach(k=>{if(c.util[k]!=='tenant'&&c.util[k]!=='landlord')c.util[k]='tenant'});if(c.keys==null)c.keys=1;if(c.keysIntercom==null)c.keysIntercom=1;
   if(c.city==null)c.city=(me&&me.city)||'';if(c.sign==null)c.sign=c.start||'';
   o.tenant=o.tenant||{name:'',phone:''};if(!o.landlord){o.landlord={...((me&&me.landlord)||{})}}return o}
 /* [поле, подпись, тип, нужно для договора, во всю ширину] */
@@ -1004,7 +1025,7 @@ function top(title,back){return `${navigator.onLine?'':'<div class="offbar" role
 function nav(){const it=[['home','Главная'],['objects','Объекты'],['finance','Финансы'],['profile','Профиль']];
   const v=ui.view==='object'||ui.view==='tenant'?'objects':ui.view==='settings'||ui.view==='help'?'profile':ui.view==='owner'?'finance':ui.view;
   return `<nav class="nav"><div>${it.map(([k,l])=>`<button data-nav="${k}" ${v===k?'aria-current="page"':''}>${ICON[k]}${l}</button>`).join('')}</div></nav>`}
-function dateBox(s){const d=parse(s);return `<div class="date"><b>${d.getDate()}</b><small>${MON_S[d.getMonth()]}</small></div>`}
+function dateBox(s){const d=parse(s);if(isNaN(d))return '<div class="date"><b>—</b><small></small></div>';return `<div class="date"><b>${d.getDate()}</b><small>${MON_S[d.getMonth()]}</small></div>`}
 
 /* ---------- вход и регистрация ----------
    Один вход по номеру телефона: код из СМС, затем — знакомство для нового номера
@@ -1124,7 +1145,7 @@ function vObject(){
       <dt>Наймодатель</dt><dd>${esc(L.name)||'—'}</dd>
       <dt>Наниматель</dt><dd>${esc(N.name)||'—'}</dd>
       <dt>Телефон нанимателя</dt><dd>${esc(N.phone)||'—'}</dd>
-      <dt>Срок</dt><dd>${c.start?fdateY(c.start)+' — '+fdateY(c.end):'—'}</dd>
+      <dt>Срок</dt><dd>${c.start?fdateY(c.start)+' — '+(c.end?fdateY(c.end):'не указан'):'—'}</dd>
       <dt>Плата</dt><dd>${rub(rentFor(o,mkey(TODAY)))} в месяц, до ${o.payDay}-го${(o.rentHist||[]).length?`<br><span class="note">по договору ${rub(o.rent)}${o.rentHist.map(h=>`, с ${fdateY(h.from+'-01')} — ${rub(h.rent)}`).join('')}</span>`:''}</dd>
       ${Number(c.penalty)>0?`<dt>Пени</dt><dd>${String(c.penalty).replace('.',',')}% в день от долга</dd>`:''}
       <dt>Залог</dt><dd>${rub(c.deposit)}</dd>
@@ -1149,6 +1170,7 @@ function vObject(){
       ${d.holds.length?`<div class="holds">${d.holds.map(h=>`<div class="note num">− ${rub(h.amount)} · ${esc(h.reason)} · ${fdate(h.date)}</div>`).join('')}</div>`:''}
       <div class="grid2" style="margin-top:10px">${!d.got?`<button class="btn small" data-act="depGot" style="grid-column:1/-1">Отметить получение залога</button>`:d.back?`<span class="note" style="grid-column:1/-1">Залог закрыт</span>`:`<button class="btn small ghost" data-act="depHold">Удержать</button><button class="btn small ghost" data-act="depBack">Вернуть</button>`}</div></div>
     ${noNpd?`<div class="alert warn">${hint('npd')} Чек НПД не отмечен по ${noNpd} ${plural(noNpd,['оплате','оплатам','оплатам'])}. Сформируйте чек в «Моём налоге» и отметьте его в строке оплаты.</div>`:''}
+    ${(()=>{const ck=mkey(TODAY);const pre=Object.keys(o.payments).filter(k=>k>ck&&(o.payments[k].amount||0)>0).sort().reverse();return pre.length?`<p class="note" style="margin:0">Внесено заранее</p><div class="list">${pre.map(k=>payRow(o,{k,due:dueDate(o,k),rec:o.payments[k],st:'paid',amt:dueOf(o,k),left:0})).join('')}</div>`:''})()}
     <div class="list">${s.map(x=>payRow(o,x)).join('')||'<div class="row note">Нет платежей</div>'}</div>`;
   }
   if(ui.tab==='pay'&&o.type==='short'){
@@ -1243,12 +1265,13 @@ function vTenant(own){
   const o=S.objects.find(x=>x.id===ui.objId);
   /* арендатор видит весь долг сразу; его оплата закрывает месяцы начиная с самого старого */
   const s=schedule(o);const open=s.filter(x=>x.st!=='paid').reverse();const cur=open[0];const total=open.reduce((a,x)=>a+x.left,0);
-  const next=cur?{due:cur.due,left:total,st:open.some(x=>x.st==='late')?'late':cur.st}:{due:dueDate(o,mkey(addMonths(TODAY.slice(0,8)+'01',1))),left:dueOf(o,mkey(addMonths(TODAY.slice(0,8)+'01',1))),st:'due'};
+  const nk=mkey(addMonths(TODAY.slice(0,8)+'01',1));
+  const next=cur?{due:cur.due,left:total,st:open.some(x=>x.st==='late')?'late':cur.st}:{due:dueDate(o,nk),left:Math.max(0,dueOf(o,nk)-((o.payments[nk]||{}).amount||0)),st:'due'};
   const last=o.meters[o.meters.length-1];
   return top(own?({flat:'Моя квартира',room:'Моя комната',house:'Мой дом'})[kindOf(o)]:'Экран арендатора',!own)+`<main>
     ${own?'':`<div class="alert info">Так квартиру видит ${esc(o.tenant.name||'арендатор')}. Действия здесь сразу появляются у арендодателя.</div>`}
     <div class="tenant"><div class="label" style="color:inherit;opacity:.8">${next.st==='late'?'Оплата просрочена':'Следующая оплата'}</div>
-      <div class="big num">${rub(next.left)}</div><div>${open.length>1?`за ${open.length} ${plural(open.length,['месяц','месяца','месяцев'])}, первый срок — ${fdateY(next.due)}`:'до '+fdateY(next.due)}</div>
+      <div class="big num">${rub(next.left)}</div><div>${open.length>1?`за ${open.length} ${plural(open.length,['месяц','месяца','месяцев'])}, первый срок — ${fdateY(next.due)}`:next.left?'до '+fdateY(next.due):'за '+mname(nk)+' уже внесено'}</div>
       ${cur&&cur.st==='claimed'?`<p style="margin:10px 0 0">Вы отметили оплату ${rub(cur.rec.claimed.amount)} с чеком. Ждём подтверждения арендодателя.</p>`:cur?`<button class="btn ghost" style="margin-top:12px" data-claim="${cur.k}">Я оплатил</button>`:''}</div>
     ${(()=>{const pn=open.reduce((a,x)=>a+peniOf(o,x),0);const ex=open.reduce((a,x)=>a+extraOf(x.rec),0)+(cur?0:extraOf((o.payments||{})[mkey(next.due)]));return (ex?`<div class="alert info">В сумме — коммунальные платежи ${rub(ex)}.</div>`:'')+(pn?`<div class="alert bad">По договору за просрочку начисляются пени: сейчас ${rub(pn)}.</div>`:'')})()}
     ${cur&&cur.rec.rejected&&cur.st!=='claimed'?`<div class="alert bad">Арендодатель не нашёл оплату ${rub(cur.rec.rejected.amount)} от ${fdate(cur.rec.rejected.date)}. Проверьте перевод и отметьте оплату ещё раз.</div>`:''}
@@ -1589,7 +1612,8 @@ function submit(name,fd){
       contract:type==='long'?{start:g('o_start'),end:g('o_end'),deposit:n('o_dep')||0}:{start:'',end:'',deposit:0},
       payments:{},meters:[],tariffs:{cold:0,hot:0,el:0,el1:0,el2:0,el3:0},elMode:g('o_el')||'single',expenses:[],bookings:[],inventory:[],dep:{got:null,holds:[],back:null},owner:g('o_owner')||'',commission:n('o_com')||0};
     if(type==='long')no.invite=inviteCode();
-    if(type==='long'&&no.contract.end<no.contract.start)return'Конец договора раньше начала.';
+    if(type==='long'&&!no.contract.start)return'Укажите начало договора.';
+    if(type==='long'&&no.contract.end&&no.contract.end<no.contract.start)return'Конец договора раньше начала.';
     if(type==='long'){ensureContract(no,S.me);no.contract.sign=no.contract.start}
     if(S.role==='agent'&&no.owner){const w=ownerUpsert(no.owner,n('o_com')?{commission:n('o_com')}:{});ownerToObj(w,no);if(!n('o_com')&&!filled(w.commission))no.commission=0}
     S.objects.push(no);
@@ -1599,6 +1623,7 @@ function submit(name,fd){
   }
   if(name==='addMeter'||name==='addMeterTenant'){
     const rv=readForm(o,g,'m_');if(!rv)return'Заполните все показания.';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(g('m_date')||''))return'Укажите дату показаний.';if(g('m_date')>TODAY)return'Дата показаний не может быть в будущем.';
     const r={date:g('m_date'),...rv};
     /* сверяем с соседями по дате, а не только с последней записью: показания могут вносить задним числом */
     const prev=o.meters.filter(x=>x.date<=r.date).pop(),next=o.meters.find(x=>x.date>r.date);
@@ -1743,7 +1768,7 @@ Object.assign(EN,{
 'Квартира':'Flat','Комната':'Room','Дом':'House','долгосрочно':'long-term','посуточно':'short-term','Изменить вид недвижимости':'Change property type','Вид недвижимости':'Property type','От вида зависит иконка объекта. Для комнаты не показываем число комнат.':'The type sets the property icon. Rooms don’t show a room count.',
 'Новый объект':'New property','Тип аренды':'Rental type','Адрес':'Address','Город, улица, дом, квартира или комната':'City, street, building, flat or room','Площадь, м²':'Area, m²','Комнат':'Rooms','Плата, ₽ (в месяц или за сутки)':'Rent, ₽ (per month or per night)','Для долгосрочной аренды:':'For long-term rentals:','Арендатор':'Tenant','Начало договора':'Lease start','Конец договора':'Lease end','Счётчик электричества':'Electricity meter','День оплаты':'Payment day','Собственник':'Owner','Комиссия, %':'Commission, %',
 'Однотарифный':'Single-rate','Двухтарифный (Т1, Т2)':'Two-rate (T1, T2)','Трёхтарифный (Т1, Т2, Т3)':'Three-rate (T1, T2, T3)','Заполните адрес, площадь и плату.':'Fill in the address, area and rent.','Объект добавлен':'Property added','Конец договора раньше начала.':'The lease ends before it starts.','На тарифе «Частник» до 5 объектов. Для большего числа нужен тариф агента.':'The Private plan allows up to 5 properties. For more, use the Agent plan.',
-'Свободна':'Vacant','Нет платежей':'No payments','Проверьте оплату':'Check payment',
+'Свободна':'Vacant','Нет платежей':'No payments','Проверьте оплату':'Check payment','Договор истёк':'Lease expired','Внесено заранее':'Paid in advance','Укажите дату показаний.':'Enter the reading date.','Дата показаний не может быть в будущем.':'The reading date can’t be in the future.','не указан':'not set','Укажите начало договора.':'Enter the lease start date.',
 /* вкладки */
 'Договор':'Lease','Платежи':'Payments','Счётчики':'Meters','Расходы':'Expenses','Опись':'Inventory','Брони':'Bookings',
 /* договор */
@@ -1914,7 +1939,7 @@ EN_RE.unshift([/^Выставить арендатору (.+)$/,'Bill tenant $1'
  [/^(\d+) (ночь|ночи|ночей)$/,(m,n)=>pl(n,'night','nights')],[/^(\d+) мес\.$/,'$1 mo.'],[/^недополучено около (.+)$/,'about $1 missed'],
  [/^(НПД|НДФЛ|ИП) (\d+%) от дохода (.+)$/,(m,t,p,s)=>`${TAXEN(t)} ${p} of income ${s}`],[/^Налог: (НПД|НДФЛ|ИП) (\d+%)$/,(m,t,p)=>`Tax: ${TAXEN(t)} ${p}`],
  [/^В файле (\d+) (объект|объекта|объектов)(?:, копия от (.+))?\.$/,(m,n,x,d)=>`The file has ${pl(n,'property','properties')}${d?', backup from '+d:''}.`],
- [/^комиссия агента (.+)$/,'agent commission $1'],[/^комиссия (\d[\d.,]*)% ›$/,'commission $1% ›'],[/^Комиссия (\d[\d.,]*)%(?: · (.+))?$/,(m,a,b)=>'Commission '+a+'%'+(b?' · '+b:'')],[/^Последняя копия: (.+)$/,'Last backup: $1'],[/^заполнено (\d+) из (\d+) — для договоров и выплат$/,'$1 of $2 filled — for leases and payouts'],[/^сейчас: (.+)$/,'now: $1'],[/^счёт (.+)$/,'account $1'],[/^карта (.+)$/,'card $1']);
+ [/^комиссия агента (.+)$/,'agent commission $1'],[/^комиссия (\d[\d.,]*)% ›$/,'commission $1% ›'],[/^Комиссия (\d[\d.,]*)%(?: · (.+))?$/,(m,a,b)=>'Commission '+a+'%'+(b?' · '+b:'')],[/^за (.+) уже внесено$/,(m,a)=>'already paid for '+trText(a)],[/^Последняя копия: (.+)$/,'Last backup: $1'],[/^заполнено (\d+) из (\d+) — для договоров и выплат$/,'$1 of $2 filled — for leases and payouts'],[/^сейчас: (.+)$/,'now: $1'],[/^счёт (.+)$/,'account $1'],[/^карта (.+)$/,'card $1']);
 function trText(t){if(LANG!=='en'||!t||!/[А-Яа-яЁё]/.test(t))return t;const k=t.trim().replace(/\s+/g,' ');let r=EN[k];
   if(r==null&&k.includes(' · ')){const parts=k.split(' · ').map(x=>x&&/[А-Яа-яЁё]/.test(x)?trText(x):x);const j=parts.join(' · ');if(j!==k)r=j}
   if(r==null)for(const[re,fn]of EN_RE){const m=k.match(re);if(m){r=typeof fn==='function'?fn(...m):k.replace(re,fn);break}}
@@ -2077,7 +2102,7 @@ function onTap(e){
     else if(a==='delInv'){o.inventory=o.inventory.filter(y=>y.id!==ui.invId);ui.sheet=null;ui.photo=null;save();toast('Удалено из описи')}
     else if(a==='rejectClaim'){const r=o.payments[ui.payRef.k];r.rejected={amount:r.claimed.amount,date:r.claimed.date};delete r.claimed;ui.sheet=null;save();toast('Оплата отклонена')}
     else if(a==='npdToggle'){S.npd=S.npd===false;save();toast(S.npd?'Напоминания о чеке НПД включены':'Напоминания о чеке НПД выключены')}
-    else if(a==='reset'){if(NEWMODE&&!confirm(LANG==='en'?'Erase all properties, payments and files on this phone?':'Стереть все объекты, оплаты и файлы на этом телефоне?'))return;const keep={role:S.role,user:S.user,session:S.session,npd:S.npd,lock:S.lock};S=NEWMODE?fixIds(emptyState()):sample();Object.assign(S,keep);ui.view='home';save();toast(NEWMODE?'Данные стёрты':'Примеры восстановлены')}
+    else if(a==='reset'){if(NEWMODE&&!confirm(LANG==='en'?'Erase all properties, payments and files on this phone?':'Стереть все объекты, оплаты и файлы на этом телефоне?'))return;const keep={role:S.role,user:S.user,session:S.session,npd:S.npd,tax:S.tax,lock:S.lock};S=NEWMODE?fixIds(emptyState()):sample();Object.assign(S,keep);ui.view='home';save();toast(NEWMODE?'Данные стёрты':'Примеры восстановлены')}
     else {ui.sheet=a;ui.err='';ui.photo=null}
   }
   render();
@@ -2127,12 +2152,14 @@ root.addEventListener('click',e=>{if(lastPT==='touch'&&e.target.closest(TAP)&&!R
 /* после появления снимаем класс, чтобы анимация не перебивала отклик на нажатие */
 root.addEventListener('animationend',e=>{if(e.animationName==='enter')e.target.classList.remove('a')});
 let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();return}
-  if(S.session&&S.lock&&S.lock.mode!=='none'&&hiddenAt&&Date.now()-hiddenAt>60000&&!ui.locked){ui.locked=true;ui.pin='';ui.err='';ui.sheet=null;M.auth=null;render()}});
+  if(S.session&&S.session.mode==='landlord'&&S.lock&&S.lock.mode!=='none'&&hiddenAt&&Date.now()-hiddenAt>60000&&!ui.locked){ui.locked=true;ui.pin='';ui.err='';ui.sheet=null;M.auth=null;render()}});
 document.addEventListener('keydown',e=>{if(ui.locked&&!ui.sheet){if(/^\d$/.test(e.key))pressKey(e.key);else if(e.key==='Backspace')pressKey('del')}});
 root.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open],[data-meter]')){e.preventDefault();e.target.click()}if(e.key==='Escape'&&ui.sheet){ui.sheet=null;ui.err='';render()}});
 root.addEventListener('submit',e=>{
   e.preventDefault();const form=e.target;const err=submit(form.dataset.form,new FormData(form));
-  if(err){ui.err=err;render();return}
+  if(err){/* ошибка проверки: экран перерисовывается, поэтому введённое возвращаем в поля, иначе форма очищалась */
+    const keep={};[...form.elements].forEach(el=>{if(!el.name||el.type==='file')return;if(el.type==='radio'){if(el.checked)keep[el.name]={radio:el.value}}else if(el.type==='checkbox')keep[el.name]={chk:el.checked};else keep[el.name]={v:el.value}});
+    ui.err=err;render();const nf=root.querySelector('form.sheet,form.auth');if(nf)Object.entries(keep).forEach(([n,k])=>nf.querySelectorAll(`[name="${CSS.escape(n)}"]`).forEach(el=>{if(k.radio!==undefined)el.checked=el.value===k.radio;else if(k.chk!==undefined)el.checked=k.chk;else el.value=k.v}));return}
   ui.sheet=null;ui.err='';if(!save())toast('Не хватило места в браузере: удалите старые фото или верните примеры');render();
 });
 root.addEventListener('input',e=>{const t=e.target;
