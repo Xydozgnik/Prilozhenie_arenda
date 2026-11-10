@@ -240,7 +240,8 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .plans{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:4px 16px 16px;scroll-padding:0 16px;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 .plans::-webkit-scrollbar{display:none}
 .plan{flex:0 0 min(78%,300px);scroll-snap-align:start;display:flex;flex-direction:column;gap:12px;padding:18px}
-.plan.cur{border-color:color-mix(in srgb,var(--accent) 70%,transparent);box-shadow:0 0 0 1.5px color-mix(in srgb,var(--accent) 55%,transparent),var(--shadow)}
+.plan.cur{background:linear-gradient(color-mix(in srgb,var(--accent-soft) 70%,transparent),color-mix(in srgb,var(--accent-soft) 70%,transparent)),var(--card);border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 0 0 1.5px color-mix(in srgb,var(--accent) 45%,transparent),var(--shadow)}
+.curbtn{pointer-events:none;justify-content:center;gap:8px}.curbtn::before{content:'✓';font-weight:700}
 .plan.rec{background:linear-gradient(160deg,var(--fill),var(--fill-2));border-color:transparent;color:#fff}
 .plan.rec .note,.plan.rec li{color:rgb(255 255 255/.78)}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -249,6 +250,7 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .plan ul{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:14px;color:var(--muted)}
 .plan li{display:flex;gap:8px;align-items:baseline}.plan li::before{content:'';flex:0 0 6px;height:6px;border-radius:50%;background:var(--lime);transform:translateY(-2px)}
 .plan .btn,.plan>.note:last-child{margin-top:auto}
+.simple .fin2{display:none}
 .tagrec{background:var(--lime);color:#14240f}
 .plan.rec .btn{background:#fff;color:#1B3015;border-color:transparent;box-shadow:0 6px 16px -8px rgb(0 0 0/.5)}
 .usage{margin:12px 0 4px}.usage .bar{margin-top:6px}
@@ -420,7 +422,7 @@ html{-webkit-tap-highlight-color:transparent}
 /* ?new — чистое приложение, как у нового пользователя: без примеров, данные хранятся отдельно от прототипа */
 const NEWMODE=new URLSearchParams(location.search).has('new');
 const KEY=NEWMODE?'arenda-new-v1':'arenda-proto-v1';
-const emptyState=()=>({v:1,role:null,npd:true,me:{landlord:{},city:''},owners:[],objects:[]});const TKEY='arenda-theme';const LKEY='arenda-lang';
+const emptyState=()=>({v:1,mode:'simple',role:null,npd:true,me:{landlord:{},city:''},owners:[],objects:[]});const TKEY='arenda-theme';const LKEY='arenda-lang';
 let LANG='ru';try{LANG=localStorage.getItem(LKEY)==='en'?'en':'ru'}catch(e){}
 let THEME='auto';try{THEME=localStorage.getItem(TKEY)||'auto'}catch(e){}
 const applyTheme=()=>{if(THEME==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=THEME};applyTheme();
@@ -709,7 +711,7 @@ function subBanner(){const s=sub();let i,c,t,x;
   if(s.state==='trial'&&daysBetween(TODAY,s.until)<=7){i='coin';c='warn';t=`<span>Пробный период до</span> ${dSpan(s.until)}`;x=`<span>Потом</span> ${rub(planPrice(s.plan,s.period))} <span>${s.period==='year'?'в год':'в месяц'}</span>`}
   else if(s.state==='grace'){i='coin';c='bad';t='<span>Не удалось списать оплату</span>';x=`<span>Проверьте карту в RuStore — тариф работает до</span> ${dSpan(s.until)}`}
   else if(s.state==='cancelled'&&daysBetween(TODAY,s.until)<=7){i='coin';c='warn';t=`<span>Подписка до</span> ${dSpan(s.until)}`;x='<span>Потом — бесплатный тариф: 1 объект в работе</span>'}
-  else if(!subOn()&&S.objects.length>1){i='lock';c='mute';t='<span>Подписка закончилась</span>';x='<span>В работе 1 объект, остальные — только просмотр</span>'}
+  else if(!subOn()&&S.objects.length>1){i='lock';c='bad';t='<span>Подписка закончилась</span>';x='<span>В работе 1 объект, остальные — только просмотр</span>'}
   else return'';
   return `<div class="list subbar ${c}"><div class="row tap" tabindex="0" data-act="plans">${ico(i,c==='mute'?'acc':c,'sm')}<div class="main"><div class="t">${t}</div><div class="s">${x}</div></div><span class="chev" aria-hidden="true">›</span></div></div>`}
 const subLine=()=>{const s=sub(),n=S.objects.length,l=limitNow();
@@ -1208,6 +1210,7 @@ function vObjects(){
 function vObject(){
   const o=S.objects.find(x=>x.id===ui.objId);if(!o){ui.view='objects';return vObjects()}
   const tabs=o.type==='long'?[['contract','Договор'],['pay','Платежи'],['meters','Счётчики'],['exp','Расходы'],['inv','Опись'],['req','Заявки'],['docs','Файлы']]:[['book','Брони'],['pay','Платежи'],['meters','Счётчики'],['exp','Расходы'],['inv','Опись'],['docs','Файлы']];
+  if(!pro()){const keep=SIMPLE_TABS[o.type]||[];for(let i=tabs.length-1;i>=0;i--)if(!keep.includes(tabs[i][0]))tabs.splice(i,1)}
   if(!tabs.some(t=>t[0]===ui.tab))ui.tab=tabs[0][0];
   const roBar=objLocked(o)?`<div class="card robar"><div class="ph">${ico('lock','acc','sm')}<div style="flex:1"><div class="t" style="font-weight:600">Только просмотр</div><div class="note">Подписка закончилась: на бесплатном тарифе в работе один объект. Данные сохранены.</div></div></div><div class="grid2"><button class="btn ghost" data-act="keepObj">Сделать рабочим</button><button class="btn" data-act="plans">Тарифы</button></div></div>`:'';
   const[st,c]=objStatus(o);
@@ -1314,6 +1317,7 @@ function vObject(){
       <div class="acts"><button class="btn small ghost" data-act="kind" aria-label="Изменить вид недвижимости">Вид</button><button class="btn small ghost" data-act="ad">Объявление</button></div></div>
     <div class="tabs${tabs.length>6?' seven':tabs.length>5?' six':''}" role="tablist">${tabs.map(([k,l])=>{const nn=k==='req'?(o.requests||[]).filter(r=>r.status==='new').length:0;return `<button class="tab" role="tab" data-tab-sel="${k}" aria-selected="${ui.tab===k}">${l}${nn?`<span class="tbadge" aria-label="новых: ${nn}">${nn}</span>`:''}</button>`}).join('')}</div>
     ${body}
+    ${pro()?'':`<p class="note">${o.type==='long'?'Расходы, опись и файлы':'Опись и файлы'} — <span>в продвинутом режиме.</span> <button class="linkbtn" data-act="modePro">Включить</button></p>`}
   </main>`;
 }
 
@@ -1433,10 +1437,13 @@ function vOwner(){const w=ui.owner;const Rg=finRange();const ob=S.objects.filter
     ${pays.length?`<h2>Выплаты</h2><div class="list">${pays.map(x=>`<div class="row">${dateBox(x.date)}<div class="main"><div class="t num">${rub(x.amount)}</div><div class="s">${x.pLabel?'за '+x.pLabel:'выплата собственнику'}${x.note?' · '+esc(x.note):''}</div></div></div>`).join('')}</div>`:''}
   </main>`}
 
+/* режим интерфейса: простой — меньше вкладок и разделов, продвинутый — всё. Данные одни и те же */
+function pro(){return S.mode!=='simple'}
+const SIMPLE_TABS={long:['contract','pay','meters','req'],short:['book','pay','exp','meters']};
 function vPlans(){const s=sub(),n=S.objects.length,l=limitNow(),I=subInfo(),per=ui.period||s.period,on=subOn();
   const pct=l===Infinity?Math.min(100,n*3):Math.min(100,Math.round(n/l*100));
   const card=k=>{const P=PLANS[k],cur=(on?s.plan:'start')===k,rec=k===planRec()&&!cur,price=planPrice(k,per),small=k!=='start'&&P.lim<n;
-    const btn=k==='start'?'':cur?'<button class="btn ghost wide" disabled>Ваш тариф</button>':small?`<p class="note" style="margin:0"><span>Не хватит: объектов у вас</span> ${n}</p>`
+    const btn=k==='start'?(cur?'<div class="btn wide curbtn" aria-disabled="true">Ваш тариф</div>':''):cur?'<div class="btn wide curbtn" aria-disabled="true">Ваш тариф</div>':small?`<p class="note" style="margin:0"><span>Не хватит: объектов у вас</span> ${n}</p>`
       :`<button class="btn ${rec?'ghost':''} wide" data-plan="${k}">${!s.trialUsed?'30 дней бесплатно':on&&s.state!=='cancelled'?'Перейти':'Оформить'}</button>`;
     return `<div class="card plan${cur?' cur':''}${rec?' rec':''}"><div class="ph"><div class="pn">${planName(k)}</div>${cur?'<span class="pill p-ok">ваш тариф</span>':rec?'<span class="pill tagrec">советуем</span>':''}</div>
       <div><div class="big num">${k==='start'?'0 ₽':rub(price)}</div><div class="note">${k==='start'?'всегда бесплатно':per==='year'?`<span>в год</span> · ≈ ${rub(Math.round(price/12))} <span>в месяц</span>`:'в месяц'}</div></div>
@@ -1464,6 +1471,8 @@ function vProfile(){
   const r=S.role==='agent'?'Агент':'Частник';
   return top('Профиль')+`<main>
     <div class="card"><dl class="kv"><dt>Имя</dt><dd>${esc(S.user?S.user.name:'—')}</dd><dt>Телефон</dt><dd>${S.user?fmtPhone(S.user.phone):'—'}</dd><dt>Роль</dt><dd>${r}</dd></dl></div>
+    <div class="card"><div class="label">Режим</div><div class="seg two" role="group" aria-label="Режим">${[['simple','Простой'],['pro','Продвинутый']].map(([k,t])=>`<button data-mode="${k}" aria-pressed="${(pro()?'pro':'simple')===k}">${t}</button>`).join('')}</div>
+      <p class="note" style="margin:10px 0 0">${pro()?'Все вкладки и разделы: расходы, опись, файлы, простой и прогноз в Финансах.':'Только главное: договор, платежи, счётчики, заявки или брони. Данные не пропадают — их видно в продвинутом режиме.'}</p></div>
     <div class="list"><div class="row tap" tabindex="0" data-act="plans">${ico('coin','acc','sm')}<div class="main"><div class="t"><span>Тариф</span> «${planName(subOn()?sub().plan:'start')}»</div><div class="s">${subLine()}</div></div><span class="chev" aria-hidden="true">›</span></div></div>
     <div class="list"><div class="row tap" tabindex="0" data-act="settings">${ico('gear','acc','sm')}<div class="main"><div class="t">Настройки</div><div class="s">${LANG==='en'?'English':'Русский'} · вход: ${({none:'без защиты',pin:'код',bio:'отпечаток или лицо'})[(S.lock||{}).mode||'none']} · тема</div></div><span class="chev" aria-hidden="true">›</span></div>
       <div class="row tap" tabindex="0" data-act="help">${ico('sparkle','acc','sm')}<div class="main"><div class="t">Помощь и идеи</div><div class="s">как пользоваться · пожелания · что нового</div></div><span class="chev" aria-hidden="true">›</span></div></div>
@@ -1480,17 +1489,10 @@ const taxMode=()=>TAX[S.tax]?S.tax:(S.npd===false?'ndfl':'npd');
 function vSettings(){const L=S.lock||{mode:'none'};
   const opt=(k,t,d,ic)=>`<div class="row tap lockopt" tabindex="0" role="radio" aria-checked="${L.mode===k}" data-lock="${k}">${ico(ic,L.mode===k?'acc':'mute','sm')}<div class="main"><div class="t">${t}</div><div class="s">${d}</div></div><span class="radio" aria-hidden="true"></span></div>`;
   return top('Настройки',true)+`<main>
-    <h2>Язык</h2>
-    <div class="card"><div class="seg two" role="group" aria-label="Язык">${[['ru','Русский'],['en','English']].map(([k,l])=>`<button data-lang="${k}" data-notr lang="${k}" aria-pressed="${LANG===k}">${l}</button>`).join('')}</div>
-      <p class="note" style="margin:10px 0 0">Договор и передаточный акт всегда на русском: это юридические документы.</p></div>
     <h2>Вход в приложение</h2>
     <div class="list" role="radiogroup" aria-label="Вход в приложение">${opt('none','Без защиты','Приложение открывается сразу','dots')}${opt('pin','Код из 4 цифр','Спрашиваем при открытии и после минуты в фоне','lock')}${opt('bio','Отпечаток или лицо','Биометрия телефона, код — запасной вариант','finger')}</div>
     ${L.mode!=='none'?'<button class="btn ghost wide" data-act="pinSet">Сменить код</button>':''}
     <p class="note">На Android приложение не выбирает между отпечатком и лицом: система сама предложит тот способ, что настроен в телефоне. Face ID есть только на iPhone.</p>
-    <h2>Офлайн-режим</h2>
-    <div class="card total"><div style="flex:1;min-width:0"><div class="label">${ui.offline.ready?'Приложение сохранено на телефоне':ui.offline.can?'Сохраняем приложение…':'Офлайн-режим работает на сайте'}</div>
-      <div class="note">${ui.offline.ready?'Откроется и будет работать без интернета: все данные хранятся на телефоне.':ui.offline.can?'Через пару секунд приложение будет доступно без интернета.':'Откройте прототип по адресу GitHub Pages — там он сохранится на телефоне. Из файла на компьютере офлайн-режим недоступен.'}</div></div>${ico(ui.offline.ready?'cloudok':'cloud',ui.offline.ready?'acc':'mute')}</div>
-    ${installPrompt?'<button class="btn wide" data-act="install">Установить на главный экран</button>':ui.offline.can&&!matchMedia('(display-mode: standalone)').matches?'<p class="note">Чтобы открывать как приложение: в меню браузера выберите «Добавить на главный экран» или «Установить приложение».</p>':''}
     <h2>Оформление</h2>
     <div class="card"><div class="seg" role="group" aria-label="Тема">${[['auto','Как в системе'],['light','Светлая'],['dark','Тёмная']].map(([k,l])=>`<button data-theme-set="${k}" aria-pressed="${THEME===k}">${l}</button>`).join('')}</div></div>
     <h2>Налоги</h2>
@@ -1502,6 +1504,13 @@ function vSettings(){const L=S.lock||{mode:'none'};
     <div class="card"><p class="note" style="margin:0">Сейчас все данные хранятся только на этом телефоне. Сохраните копию в файл — например, в облако или себе в мессенджер, — и сможете восстановить её на новом телефоне.</p>
       <div class="grid2"><button class="btn small" data-act="backupSave">Сохранить в файл</button><label class="btn small ghost filebtn" for="restore_in">Восстановить из файла</label></div>
       <input id="restore_in" type="file" accept=".json,application/json" class="sr">${S.backupAt?`<p class="note" style="margin:0">Последняя копия: ${fdateY(S.backupAt)}</p>`:''}</div>
+    <h2>Язык</h2>
+    <div class="card"><div class="seg two" role="group" aria-label="Язык">${[['ru','Русский'],['en','English']].map(([k,l])=>`<button data-lang="${k}" data-notr lang="${k}" aria-pressed="${LANG===k}">${l}</button>`).join('')}</div>
+      <p class="note" style="margin:10px 0 0">Договор и передаточный акт всегда на русском: это юридические документы.</p></div>
+    <h2>Офлайн-режим</h2>
+    <div class="card total"><div style="flex:1;min-width:0"><div class="label">${ui.offline.ready?'Приложение сохранено на телефоне':ui.offline.can?'Сохраняем приложение…':'Офлайн-режим работает на сайте'}</div>
+      <div class="note">${ui.offline.ready?'Откроется и будет работать без интернета: все данные хранятся на телефоне.':ui.offline.can?'Через пару секунд приложение будет доступно без интернета.':'Откройте прототип по адресу GitHub Pages — там он сохранится на телефоне. Из файла на компьютере офлайн-режим недоступен.'}</div></div>${ico(ui.offline.ready?'cloudok':'cloud',ui.offline.ready?'acc':'mute')}</div>
+    ${installPrompt?'<button class="btn wide" data-act="install">Установить на главный экран</button>':ui.offline.can&&!matchMedia('(display-mode: standalone)').matches?'<p class="note">Чтобы открывать как приложение: в меню браузера выберите «Добавить на главный экран» или «Установить приложение».</p>':''}
   </main>`}
 
 /* ---------- блокировка входа: код и биометрия ----------
@@ -1558,7 +1567,7 @@ const HINTS={
  el:['Тип электросчётчика','Однотарифный считает всё одной цифрой. Двухтарифный — днём (Т1) и ночью (Т2) по разным ценам. Трёхтарифный — пик (Т1), ночь (Т2) и полупик (Т3). Тип написан на счётчике или в квитанции; сменить его можно в «Тарифах».'],
  com:['Комиссия агента','Процент от денег, полученных от арендаторов по объекту. Задаётся у каждого объекта. К выплате собственнику = получено − расходы − комиссия.']};
 const ROADMAP=[['avito','Синхронизация броней с Авито и Суточно','чтобы не было двойных броней'],['nalog','Чеки НПД через «Мой налог» автоматически','без ручного ввода в приложении ФНС'],['remind','Напоминания арендатору в Telegram и СМС','об оплате и показаниях'],['photoact','Фотоакт при выезде со сравнением','фото «было» и «стало» рядом'],['excel','Отчёты в Excel и PDF','для бухгалтера и налоговой'],['share','Доступ для семьи или помощника','несколько человек ведут одни объекты'],['sync','Синхронизация между телефонами','арендодатель и арендатор видят одно и то же'],['bank','Сверка оплат с выпиской банка','чтобы не отмечать вручную']];
-const CHANGES=[['10 ноября','Тарифы: экран с плашками, пробные 30 дней, напоминания о конце пробного периода и неудачном списании; после окончания подписки данные не удаляются'],['9 ноября','Карточка собственника с контактами и реквизитами, жесты: смахнуть шторку вниз, листать вкладки и разделы свайпом, системная кнопка «Назад»'],['8 ноября','Плата с выбранного месяца, коммунальные платежи в оплате арендатора, пени, простои и прогноз, оценка налога, файлы объекта, текст объявления, резервная копия'],['8 ноября','Заявки о поломках, календарь броней, уборка, отчёт за любой период, собственники и выплаты для агента, работа без интернета'],['8 ноября','Настройки: вход по коду или отпечатку, английский язык'],['8 ноября','Вход по номеру телефона, приглашение арендатора, опись, оплаты частями, залог, чек НПД'],['7 ноября','Договор найма и передаточный акт в Word прямо из карточки']];
+const CHANGES=[['10 ноября','Режим «Простой / Продвинутый» в Профиле: в простом — главные вкладки без лишнего'],['10 ноября','Тарифы: экран с плашками, пробные 30 дней, напоминания о конце пробного периода и неудачном списании; после окончания подписки данные не удаляются'],['9 ноября','Карточка собственника с контактами и реквизитами, жесты: смахнуть шторку вниз, листать вкладки и разделы свайпом, системная кнопка «Назад»'],['8 ноября','Плата с выбранного месяца, коммунальные платежи в оплате арендатора, пени, простои и прогноз, оценка налога, файлы объекта, текст объявления, резервная копия'],['8 ноября','Заявки о поломках, календарь броней, уборка, отчёт за любой период, собственники и выплаты для агента, работа без интернета'],['8 ноября','Настройки: вход по коду или отпечатку, английский язык'],['8 ноября','Вход по номеру телефона, приглашение арендатора, опись, оплаты частями, залог, чек НПД'],['7 ноября','Договор найма и передаточный акт в Word прямо из карточки']];
 const hint=k=>`<button type="button" class="hint" data-hint="${k}" aria-label="Что это: ${HINTS[k][0]}">?</button>`;
 const helpArticle=([ic,t,steps])=>`<details class="art" data-text="${esc((t+' '+steps.join(' ')).toLowerCase())}"><summary>${ico(ic,'acc','sm')}<span>${t}</span></summary><ol>${steps.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
 function vHelp(){const fb=(S.feedback||[]).slice().reverse();
@@ -2072,7 +2081,9 @@ function trText(t){if(LANG!=='en'||!t||!/[А-Яа-яЁё]/.test(t))return t;cons
   if(r==null)for(const[re,fn]of EN_RE){const m=k.match(re);if(m){r=typeof fn==='function'?fn(...m):k.replace(re,fn);break}}
   return r==null?t:t.replace(t.trim(),r)}
 const planEN=n=>n==='Старт'?'Start':n==='Частник'?'Private':n.replace('Частник','Private').replace('Агент','Agent').replace(' без лимита',' Unlimited');
-Object.assign(EN,{'Тариф':'Plan','Сейчас':'Now','Старт':'Start','Частник':'Private','Пробный период':'Free trial','Активна':'Active','Не удалось списать':'Payment failed','Отменена':'Cancelled','Закончилась':'Expired','Бесплатно':'Free',
+Object.assign(EN,{'Режим':'Mode','Простой':'Simple','Продвинутый':'Advanced','Простой режим':'Simple mode','Продвинутый режим':'Advanced mode','Включить':'Turn on','в продвинутом режиме.':'are in advanced mode.','Расходы, опись и файлы':'Expenses, inventory and files','Опись и файлы':'Inventory and files',
+'Все вкладки и разделы: расходы, опись, файлы, простой и прогноз в Финансах.':'All tabs and sections: expenses, inventory, files, vacancy and forecast in Finance.','Только главное: договор, платежи, счётчики, заявки или брони. Данные не пропадают — их видно в продвинутом режиме.':'Just the essentials: lease, payments, meters, requests or bookings. No data is lost — it is all visible in advanced mode.',
+'Тариф':'Plan','Сейчас':'Now','Старт':'Start','Частник':'Private','Пробный период':'Free trial','Активна':'Active','Не удалось списать':'Payment failed','Отменена':'Cancelled','Закончилась':'Expired','Бесплатно':'Free',
 'Бесплатно до':'Free until','Первое списание':'First charge on','Отменить можно до этого дня.':'You can cancel before that day.','Следующее списание':'Next charge','в месяц':'per month','в год':'per year','Подписка продлевается сама через RuStore.':'The subscription renews automatically via RuStore.',
 'Тариф работает до':'Plan works until','RuStore повторит списание. Проверьте карту или выберите другую в RuStore.':'RuStore will retry the charge. Check your card or choose another one in RuStore.','Действует до':'Active until',
 'Потом — бесплатный «Старт»: в работе 1 объект, остальные только для просмотра. Данные сохранятся.':'Then the free “Start” plan: 1 property in use, the rest view-only. Your data stays.',
@@ -2103,7 +2114,7 @@ Object.assign(EN,{'Тариф':'Plan','Сейчас':'Now','Старт':'Start',
 'Лимит тарифа: выберите тариф побольше в Профиле → «Тариф».':'Plan limit reached: choose a bigger plan in Profile → “Plan”.','без ограничений':'unlimited',
 'Тариф и подписка':'Plan and subscription','Профиль → «Тариф»: сколько объектов можно вести и до какого числа оплачено.':'Profile → “Plan”: how many properties you can manage and until when it is paid.','1 объект — бесплатно всегда. Для 2-го и больше — подписка, первые 30 дней бесплатно.':'1 property is always free. For 2 or more — a subscription, the first 30 days free.',
 'Подписка продлевается сама через RuStore, отменить можно в любой момент.':'The subscription renews automatically via RuStore; cancel any time.','Если подписка закончилась, данные не удаляются: в работе остаётся 1 объект, остальные — только просмотр.':'If the subscription ends, data is not deleted: 1 property stays in use, the rest are view-only.',
-'Тарифы: экран с плашками, пробные 30 дней, напоминания о конце пробного периода и неудачном списании; после окончания подписки данные не удаляются':'Plans: a screen with plan cards, a 30-day free trial, reminders before the trial ends and when a payment fails; data is kept after the subscription ends'});
+'Режим «Простой / Продвинутый» в Профиле: в простом — главные вкладки без лишнего':'Simple / Advanced mode in Profile: simple shows just the main tabs','Тарифы: экран с плашками, пробные 30 дней, напоминания о конце пробного периода и неудачном списании; после окончания подписки данные не удаляются':'Plans: a screen with plan cards, a 30-day free trial, reminders before the trial ends and when a payment fails; data is kept after the subscription ends'});
 EN_RE.unshift([/^до (\d+) объект(?:а|ов)$/,(m,a)=>'up to '+a+(a==='1'?' property':' properties')],[/^(Частник|Агент)( 10| 30| без лимита)$/,m=>planEN(m)],[/^«(Старт|Частник|Агент)([^»]*)»(.*)$/,(m,a,b,c)=>'“'+planEN(a+b)+'”'+c]);
 function translate(el){if(LANG!=='en')return;const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
   while((n=w.nextNode())){if(n.parentElement&&n.parentElement.closest('[data-notr],.addr'))continue;const v=trText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v}
@@ -2178,7 +2189,7 @@ function renderView(){
     ui.objId=o.id;ui.view='tenant';root.innerHTML=`<div class="app">${vTenant(true)}</div>${ui.sheet?sheet():''}`}
   else{if(!S.role)S.role='private';if(ui.view==='tenant'&&!S.objects.some(x=>x.id===ui.objId))ui.view='home';
     const v={home:vHome,objects:vObjects,object:vObject,tenant:()=>vTenant(false),finance:vFinance,profile:vProfile,settings:vSettings,owner:vOwner,help:vHelp,plans:vPlans}[ui.view]||vHome;
-    root.innerHTML=`<div class="app">${v()}</div>${nav()}${ui.sheet?sheet():''}`}
+    root.innerHTML=`<div class="app${pro()?'':' simple'}">${v()}</div>${nav()}${ui.sheet?sheet():''}`}
   if(ghost){document.body.appendChild(ghost);setTimeout(()=>ghost.remove(),320)}
   motion();translate(root);
   {const pl=root.querySelector('.plans');if(pl){const c=pl.querySelector('.plan.cur:not(:first-child)')||pl.querySelector('.plan.rec');
@@ -2186,13 +2197,14 @@ function renderView(){
   if(ui.sheet){const i=root.querySelector('.sheet input,.sheet select');if(i&&!ui.err)i.focus({preventScroll:true})}
 }
 function onTap(e){
-  const t=e.target.closest('[data-plan],[data-period],[data-substate],[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-payin],[data-bpayin],[data-claimview],[data-npd],[data-bnpd],[data-inv],[data-claim],[data-auth],[data-theme-set],[data-lang],[data-lock],[data-key],[data-req],[data-clean],[data-day],[data-calnav],[data-finmode],[data-finnav],[data-owner],[data-hint],[data-vote],[data-step],[data-doc],[data-tax],[data-receipt]');
+  const t=e.target.closest('[data-mode],[data-plan],[data-period],[data-substate],[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-payin],[data-bpayin],[data-claimview],[data-npd],[data-bnpd],[data-inv],[data-claim],[data-auth],[data-theme-set],[data-lang],[data-lock],[data-key],[data-req],[data-clean],[data-day],[data-calnav],[data-finmode],[data-finnav],[data-owner],[data-hint],[data-vote],[data-step],[data-doc],[data-tax],[data-receipt]');
   if(!t){return}
   if(t.dataset.act==='close'&&t.classList.contains('scrim')&&e.target!==t)return;
   const d=t.dataset;const o=S.objects.find(x=>x.id===ui.objId);
   if(d.key){pressKey(d.key);return}
   if(ui.view==='object'&&o&&!ui.sheet&&objLocked(o)&&!(d.nav||d.open||d.tabSel||d.hint||d.claimview||d.receipt||d.doc||d.calnav||d.meter||['back','docx','ad','plans','keepObj','tenantView','close'].includes(d.act))){ui.sheet='limit';ui.err='';render();return}
   if(d.lang){LANG=d.lang;try{localStorage.setItem(LKEY,LANG)}catch(e){}applyLang();toast(LANG==='en'?'Language: English':'Язык: русский')}
+  else if(d.mode){S.mode=d.mode==='simple'?'simple':'pro';save();toast(d.mode==='simple'?'Простой режим':'Продвинутый режим')}
   else if(d.plan){ui.planSel=d.plan;ui.sheet='buy';ui.err=''}
   else if(d.period){ui.period=d.period}
   else if(d.substate){subDemo(d.substate);toast('Состояние подписки изменено')}
@@ -2238,6 +2250,7 @@ function onTap(e){
     if(a==='back')backView();
     else if(a==='plans'){if(ui.view!=='plans')ui.plansFrom=ui.view;ui.view='plans';ui.sheet=null;ui.period=sub().period;ui.plansScroll=null;window.scrollTo(0,0)}
     else if(a==='addObj'){ui.sheet=S.objects.length>=limitNow()?'limit':'addObj';ui.err='';ui.photo=null}
+    else if(a==='modePro'){S.mode='pro';save();toast('Продвинутый режим')}
     else if(a==='keepObj'){sub().keep=o.id;save();toast('Этот объект теперь в работе')}
     else if(a==='buyOk'){const st=sub(),k=ui.planSel,per=ui.period||st.period;
       if(PLANS[k]&&k!=='start'&&PLANS[k].lim>=S.objects.length){
@@ -2283,7 +2296,7 @@ function onTap(e){
     else if(a==='delInv'){o.inventory=o.inventory.filter(y=>y.id!==ui.invId);ui.sheet=null;ui.photo=null;save();toast('Удалено из описи')}
     else if(a==='rejectClaim'){const r=o.payments[ui.payRef.k];r.rejected={amount:r.claimed.amount,date:r.claimed.date};delete r.claimed;ui.sheet=null;save();toast('Оплата отклонена')}
     else if(a==='npdToggle'){S.npd=S.npd===false;save();toast(S.npd?'Напоминания о чеке НПД включены':'Напоминания о чеке НПД выключены')}
-    else if(a==='reset'){if(NEWMODE&&!confirm(LANG==='en'?'Erase all properties, payments and files on this phone?':'Стереть все объекты, оплаты и файлы на этом телефоне?'))return;const keep={role:S.role,user:S.user,session:S.session,npd:S.npd,tax:S.tax,lock:S.lock,sub:S.sub};S=NEWMODE?fixIds(emptyState()):sample();Object.assign(S,keep);ui.view='home';save();toast(NEWMODE?'Данные стёрты':'Примеры восстановлены')}
+    else if(a==='reset'){if(NEWMODE&&!confirm(LANG==='en'?'Erase all properties, payments and files on this phone?':'Стереть все объекты, оплаты и файлы на этом телефоне?'))return;const keep={role:S.role,user:S.user,session:S.session,npd:S.npd,tax:S.tax,lock:S.lock,sub:S.sub,mode:S.mode};S=NEWMODE?fixIds(emptyState()):sample();Object.assign(S,keep);ui.view='home';save();toast(NEWMODE?'Данные стёрты':'Примеры восстановлены')}
     else {ui.sheet=a;ui.err='';ui.photo=null}
   }
   render();
