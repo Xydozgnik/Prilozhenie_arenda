@@ -62,6 +62,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* место под полосу прокрутки держим всегда: иначе на компьютере короткий список без полосы шире длинного, и меню с карточками «прыгают» вбок */
 html{scrollbar-gutter:stable}
 .seg button{white-space:nowrap;padding-inline:4px}
+html{touch-action:manipulation}button,a,label,input,select,textarea,.key,.tap{touch-action:manipulation}
 .sheet{overscroll-behavior:contain;touch-action:pan-y}
 .sheet::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:-8px auto 2px;flex:none}
 .ownchk{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}.ownchk:last-child{border-bottom:0}.ownchk input{width:22px;height:22px;accent-color:var(--accent);flex:none}.ownchk .s{color:var(--muted);font-size:13px}
@@ -153,7 +154,7 @@ h2{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);ma
 .check{display:flex;gap:8px;align-items:center}
 .onb{min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:16px;padding-block:24px;max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .onb h1{font-family:var(--display);font-weight:600;font-size:28px;margin:0;text-wrap:balance}
-.role{text-align:left;border:1px solid var(--edge);background:var(--card);box-shadow:var(--shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.role{text-align:left;border:1px solid var(--edge);background:var(--card);box-shadow:var(--shadow);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .role b{font-size:17px}
 .zones{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
 .zones legend{font-size:13px;color:var(--muted);padding:0 4px}
@@ -251,7 +252,7 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 @media (prefers-reduced-motion:no-preference){.biosim .ico{animation:pulse 1.4s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.1);box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 12%,transparent)}}}
 .tabs.six{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:20px;row-gap:2px}
 .tbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:5px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;vertical-align:1px}
-.seg.four{grid-template-columns:repeat(4,minmax(0,1fr))}.seg button{font-size:14px}
+.seg:not(.four){grid-template-columns:repeat(3,minmax(max-content,1fr))}.seg.two{grid-template-columns:repeat(2,minmax(max-content,1fr))}.seg.four{grid-template-columns:repeat(4,minmax(0,1fr))}.seg button{font-size:14px}
 .calhead{display:flex;align-items:center;gap:10px}.calt{flex:1;text-align:center;min-width:0}.calt .t{font-weight:600}
 .cal{display:flex;flex-direction:column;gap:10px}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
@@ -293,7 +294,7 @@ table.fin td{padding:10px 6px;border-top:1px solid var(--line);text-align:right}
 .fin2{gap:10px}.fin2 .card{padding:12px 14px}
 .objhead .acts{align-self:flex-start}
 /* Матовые карточки: полупрозрачный градиент, светлая кромка, мягкая тень */
-.card,.list,.ut,.tabs,.chip,.back{background:var(--card);border:1px solid var(--edge);box-shadow:var(--shadow);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.card,.list,.ut,.tabs,.chip,.back{background:var(--card);border:1px solid var(--edge);box-shadow:var(--shadow)}
 .ut{border-top:3px solid var(--t)}
 .list .row{border-top-color:var(--line)}
 /* Главный блок экрана — глубокий зелёный, как карточка «Readiness» в образце */
@@ -756,11 +757,18 @@ function contractSubmit(o,g){const ps=[];CF.forEach(([,fs])=>fs.forEach(x=>ps.pu
   const val={};for(const[p,l,t]of ps){const raw=(g('c__'+p.replace(/\./g,'__'))??'').trim();val[p]=t==='number'?(raw===''?'':Number(raw)):raw}
   if(!val.name)return'Укажите адрес помещения.';if(!(val.rent>0))return'Укажите плату в месяц.';
   if(val['contract.start']&&val['contract.end']&&val['contract.end']<val['contract.start'])return'Конец найма раньше начала.';
+  const oldRent=o.rent,oldDue={};Object.keys(o.payments||{}).forEach(k=>oldDue[k]=dueDate(o,k));
   for(const p in val){let v=val[p];if(p==='payDay')v=Math.min(31,Math.max(1,v||1));if((p==='area'||p==='rooms'||p==='contract.deposit')&&v==='')v=0;sp(o,p,v)}
   o.contract.util={el:g('c_u_el')||'tenant',water:g('c_u_water')||'tenant',heat:g('c_u_heat')||'tenant'};
   o.contract.keys=Number(g('c_keys'))||0;o.contract.keysIntercom=Number(g('c_keysI'))||0;
   if(S.role==='agent'&&o.landlord.name){o.owner=o.landlord.name;const d={};OW_L.forEach(k=>d[k]=o.landlord[k]);ownerUpsert(o.owner,d)}
-  S.me={landlord:{...o.landlord},city:o.contract.city};toast('Договор обновлён');}
+  S.me={landlord:{...o.landlord},city:o.contract.city};
+  /* плату исправили: месяцы, отмеченные оплаченными автоматически при создании, пересчитываются по новой плате */
+  let fixed=0;if(o.type==='long'&&o.rent!==oldRent)Object.entries(o.payments||{}).forEach(([k,p])=>{
+    if(rentFor(o,k)!==o.rent||p.claimed||p.receiptId||extraOf(p))return;
+    const pt=p.parts||[];const auto=p.auto||(p.auto==null&&p.npd===true&&pt.length===1&&p.amount===oldRent&&pt[0].amount===oldRent&&pt[0].date===oldDue[k]);
+    if(!auto)return;p.amount=o.rent;p.parts=[{amount:o.rent,date:dueDate(o,k)}];p.date=dueDate(o,k);p.auto=true;fixed++});
+  toast(fixed?'Договор обновлён, оплаты прошлых месяцев пересчитаны':'Договор обновлён');}
 
 /* --- слова и даты для текста договора --- */
 const plural=(n,f)=>{const a=n%100,b=n%10;return a>10&&a<20?f[2]:b===1?f[0]:b>=2&&b<=4?f[1]:f[2]};
@@ -1484,7 +1492,7 @@ function payTarget(o){const ref=ui.payRef;if(ref.b){const b=o.bookings.find(x=>x
   const r=o.payments[ref.k]||{amount:0};const am=dueOf(o,ref.k);return{title:'Оплата за '+mname(ref.k),total:am,paid:r.amount||0,left:Math.max(0,am-(r.amount||0)),k:ref.k}}
 /* суммы округляем до копеек на входе, чтобы не копились дробные хвосты вида 0.30000000000000004 */
 const kop=v=>Math.round((Number(v)||0)*100)/100;
-function addPart(r,amt,date,npd){amt=kop(amt);r.parts=r.parts||[];r.parts.push({amount:amt,date});r.amount=kop((r.amount||0)+amt);r.date=date;if(npd)r.npd=true}
+function addPart(r,amt,date,npd){amt=kop(amt);delete r.auto;r.parts=r.parts||[];r.parts.push({amount:amt,date});r.amount=kop((r.amount||0)+amt);r.date=date;if(npd)r.npd=true}
 function sheet(){
   const o=S.objects.find(x=>x.id===ui.objId);const s=ui.sheet;let h='';
   if(s==='addObj')h=`<h3>Новый объект</h3>
@@ -1618,7 +1626,7 @@ function submit(name,fd){
     if(S.role==='agent'&&no.owner){const w=ownerUpsert(no.owner,n('o_com')?{commission:n('o_com')}:{});ownerToObj(w,no);if(!n('o_com')&&!filled(w.commission))no.commission=0}
     S.objects.push(no);
     /* договор, начатый раньше: прошлые месяцы отмечаются оплаченными в срок (и с чеком НПД), чтобы не появлялся ложный долг */
-    if(type==='long'&&g('o_paidpast')){schedule(no).filter(x=>x.due<TODAY).forEach(x=>{no.payments[x.k]={amount:x.amt,date:x.due,parts:[{amount:x.amt,date:x.due}],npd:true}})}
+    if(type==='long'&&g('o_paidpast')){schedule(no).filter(x=>x.due<TODAY).forEach(x=>{no.payments[x.k]={amount:x.amt,date:x.due,parts:[{amount:x.amt,date:x.due}],npd:true,auto:true}})}
     ui.objId=no.id;ui.view='object';ui.tab=null;toast('Объект добавлен');return;
   }
   if(name==='addMeter'||name==='addMeterTenant'){
@@ -1764,7 +1772,7 @@ Object.assign(EN,{
 /* главная */
 'Долги':'Debts','Ближайшие события':'Upcoming events','Событий нет':'No events','Передать показания':'Submit meter readings','Конец договора через':'Lease ends in','Проверить показания по фото':'Check readings against the photo',
 /* объекты */
-'Все':'All','Долгосрочные':'Long-term','Посуточные':'Short-term','Добавить объект':'Add property','Нет объектов этого типа':'No properties of this type','Объектов пока нет. Добавьте первую квартиру, комнату или дом — дальше приложение подскажет, что заполнить.':'No properties yet. Add your first flat, room or house — the app will show what to fill in next.','Нет объектов':'No properties','добавьте объект, чтобы считать простой':'add a property to track vacancy','Если договор начался раньше — оплаты за прошлые месяцы уже получены':'If the lease started earlier, past months are already paid','Долгосрочная':'Long-term','Посуточная':'Short-term',
+'Договор обновлён, оплаты прошлых месяцев пересчитаны':'Lease updated, past payments recalculated','Все':'All','Долгосрочные':'Long-term','Посуточные':'Short-term','Добавить объект':'Add property','Нет объектов этого типа':'No properties of this type','Объектов пока нет. Добавьте первую квартиру, комнату или дом — дальше приложение подскажет, что заполнить.':'No properties yet. Add your first flat, room or house — the app will show what to fill in next.','Нет объектов':'No properties','добавьте объект, чтобы считать простой':'add a property to track vacancy','Если договор начался раньше — оплаты за прошлые месяцы уже получены':'If the lease started earlier, past months are already paid','Долгосрочная':'Long-term','Посуточная':'Short-term',
 'Квартира':'Flat','Комната':'Room','Дом':'House','долгосрочно':'long-term','посуточно':'short-term','Изменить вид недвижимости':'Change property type','Вид недвижимости':'Property type','От вида зависит иконка объекта. Для комнаты не показываем число комнат.':'The type sets the property icon. Rooms don’t show a room count.',
 'Новый объект':'New property','Тип аренды':'Rental type','Адрес':'Address','Город, улица, дом, квартира или комната':'City, street, building, flat or room','Площадь, м²':'Area, m²','Комнат':'Rooms','Плата, ₽ (в месяц или за сутки)':'Rent, ₽ (per month or per night)','Для долгосрочной аренды:':'For long-term rentals:','Арендатор':'Tenant','Начало договора':'Lease start','Конец договора':'Lease end','Счётчик электричества':'Electricity meter','День оплаты':'Payment day','Собственник':'Owner','Комиссия, %':'Commission, %',
 'Однотарифный':'Single-rate','Двухтарифный (Т1, Т2)':'Two-rate (T1, T2)','Трёхтарифный (Т1, Т2, Т3)':'Three-rate (T1, T2, T3)','Заполните адрес, площадь и плату.':'Fill in the address, area and rent.','Объект добавлен':'Property added','Конец договора раньше начала.':'The lease ends before it starts.','На тарифе «Частник» до 5 объектов. Для большего числа нужен тариф агента.':'The Private plan allows up to 5 properties. For more, use the Agent plan.',
