@@ -583,7 +583,7 @@ function schedule(o){
   const out=[];let k=mkey(o.contract.start);const end=mkey(o.contract.end||TODAY);const lim=mkey(TODAY)<end?mkey(TODAY):end;
   let guard=0;
   while(k<=lim&&guard++<600){
-    const due=dueDate(o,k);const r=o.payments[k]||{amount:0};
+    const d0=dueDate(o,k);const due=o.contract.start&&k===mkey(o.contract.start)&&d0<o.contract.start?o.contract.start:d0;const r=o.payments[k]||{amount:0};
     let st;
     const amt=dueOf(o,k);
     if(r.amount>=amt)st='paid';else if(r.claimed)st='claimed';else if(r.amount>0)st=due<TODAY?'late':'partial';else st=due<TODAY?'late':'due';
@@ -594,6 +594,8 @@ function schedule(o){
 }
 function paidOf(b){return b.paidAmt||0}
 /* плата за месяц: базовая из договора, а с указанных месяцев — новая (история не пересчитывается) */
+/* месяцы, отмеченные оплаченными автоматически при создании, следуют за платой за свой месяц */
+function syncAuto(o){let n=0;Object.entries(o.payments||{}).forEach(([k,p])=>{if(!p.auto||p.claimed||p.receiptId||extraOf(p))return;const v=rentFor(o,k);if(p.amount!==v){p.amount=v;p.parts=[{amount:v,date:(p.parts&&p.parts[0]&&p.parts[0].date)||p.date}];n++}});return n}
 function rentFor(o,k){let r=o.rent;(o.rentHist||[]).forEach(h=>{if(h.from<=k)r=h.rent});return r}
 const extraOf=r=>(r&&r.extra||[]).reduce((a,x)=>a+x.amount,0);
 const dueOf=(o,k)=>rentFor(o,k)+extraOf((o.payments||{})[k]);
@@ -1784,7 +1786,7 @@ function submit(name,fd){
     toast(changed?'Показания исправлены и приняты':'Показания приняты');return;
   }
   if(name==='contract')return contractSubmit(o,g);
-  if(name==='rentUp'){const v=n('u_rent'),k=g('u_from');if(!(v>0))return'Укажите новую плату.';o.rentHist=(o.rentHist||[]).filter(h=>h.from!==k);o.rentHist.push({from:k,rent:v});o.rentHist.sort((a,b)=>a.from<b.from?-1:1);toast('С '+fdateY(k+'-01')+' плата '+rub(v));return}
+  if(name==='rentUp'){const v=n('u_rent'),k=g('u_from');if(!(v>0))return'Укажите новую плату.';o.rentHist=(o.rentHist||[]).filter(h=>h.from!==k);o.rentHist.push({from:k,rent:v});o.rentHist.sort((a,b)=>a.from<b.from?-1:1);syncAuto(o);toast('С '+fdateY(k+'-01')+' плата '+rub(v));return}
   if(name==='bill'){const amt=n('u_amt'),k=g('u_k');if(!(amt>0))return'Укажите сумму.';const m=o.meters;const a=m[m.length-2],b=m[m.length-1];const r=o.payments[k]=o.payments[k]||{amount:0};(r.extra=r.extra||[]).push({id:uid(),amount:amt,note:'Коммунальные платежи за '+fdate(a.date)+' — '+fdate(b.date),meterId:b.id});b.billed=k;toast('Добавлено к оплате за '+mname(k));return}
   if(name==='restore'){const keep={session:S.session,lock:S.lock,user:S.user,sub:S.sub};S=fixIds(ui.restoreData);Object.assign(S,keep);ui.restoreData=null;ui.view='home';toast('Данные восстановлены из файла');return}
   if(name==='docAdd'){const nm=(g('d_name')||'').trim();if(!nm)return'Укажите название.';const F=ui.docFile;(o.docs=o.docs||[]).push({id:uid(),name:nm,cat:g('d_cat')||'Другое',type:F.type,data:F.data,size:F.size,date:TODAY});ui.docFile=null;toast('Файл добавлен');return}
