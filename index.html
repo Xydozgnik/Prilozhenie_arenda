@@ -62,7 +62,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* место под полосу прокрутки держим всегда: иначе на компьютере короткий список без полосы шире длинного, и меню с карточками «прыгают» вбок */
 html{scrollbar-gutter:stable}
 .seg button{white-space:nowrap;padding-inline:4px}
-html{touch-action:manipulation}button,a,label,input,select,textarea,.key,.tap{touch-action:manipulation}
+html{touch-action:manipulation}
+/* числа вводятся только с клавиатуры: без стрелок, колесо мыши и стрелки клавиатуры значение не меняют */
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}button,a,label,input,select,textarea,.key,.tap{touch-action:manipulation}
 .sheet{overscroll-behavior:contain;touch-action:pan-y}
 .sheet::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:-8px auto 2px;flex:none}
 .ownchk{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}.ownchk:last-child{border-bottom:0}.ownchk input{width:22px;height:22px;accent-color:var(--accent);flex:none}.ownchk .s{color:var(--muted);font-size:13px}
@@ -2203,7 +2206,8 @@ function renderView(){
 function onTap(e){
   const t=e.target.closest('[data-mode],[data-plan],[data-period],[data-substate],[data-meter],[data-role],[data-nav],[data-open],[data-filter],[data-tab-sel],[data-act],[data-payin],[data-bpayin],[data-claimview],[data-npd],[data-bnpd],[data-inv],[data-claim],[data-auth],[data-theme-set],[data-lang],[data-lock],[data-key],[data-req],[data-clean],[data-day],[data-calnav],[data-finmode],[data-finnav],[data-owner],[data-hint],[data-vote],[data-step],[data-doc],[data-tax],[data-receipt]');
   if(!t){return}
-  if(t.dataset.act==='close'&&t.classList.contains('scrim')&&e.target!==t)return;
+  /* шторка закрывается по фону, только если и нажали, и отпустили на фоне: выделение текста мышью до края не закрывает форму */
+  if(t.dataset.act==='close'&&t.classList.contains('scrim')&&(e.target!==t||downEl!==t))return;
   const d=t.dataset;const o=S.objects.find(x=>x.id===ui.objId);
   if(d.key){pressKey(d.key);return}
   if(ui.view==='object'&&o&&!ui.sheet&&objLocked(o)&&!(d.nav||d.open||d.tabSel||d.hint||d.claimview||d.receipt||d.doc||d.calnav||d.meter||['back','docx','ad','plans','keepObj','tenantView','close'].includes(d.act))){ui.sheet='limit';ui.err='';render();return}
@@ -2343,9 +2347,12 @@ function gEnd(e){const g=G0;G0=null;if(!g)return;const t=e.changedTouches&&e.cha
 root.addEventListener('touchend',gEnd,{passive:true});root.addEventListener('touchcancel',()=>{const g=G0;G0=null;if(g&&g.m){g.m.style.transform=''}if(g&&g.sh&&g.drag){g.sh.style.transition='transform .3s var(--spring)';g.sh.style.transform=''}},{passive:true});
 const TAP='.row.tap,.obj,.btn,.back,.role,.chip,.tab,.seg button,.kind,.nav button,.pill.npd,.linkbtn,.key,.cd,.segopt,.step,.hint';
 let pressedEl=null,lastPT='mouse';
-root.addEventListener('pointerdown',e=>{lastPT=e.pointerType;const t=e.target.closest(TAP);if(!t)return;pressedEl=t;t.classList.add('pressed')},{passive:true});
+let downEl=null;
+root.addEventListener('pointerdown',e=>{downEl=e.target;lastPT=e.pointerType;const t=e.target.closest(TAP);if(!t)return;pressedEl=t;t.classList.add('pressed')},{passive:true});
 const unpress=()=>{const el=pressedEl;pressedEl=null;if(el)setTimeout(()=>el.classList.remove('pressed'),lastPT==='touch'?160:0)};
 ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev,unpress,{passive:true}));
+document.addEventListener('wheel',e=>{const t=e.target;if(t&&t.type==='number'&&document.activeElement===t)t.blur()},{passive:true});
+document.addEventListener('keydown',e=>{if((e.key==='ArrowUp'||e.key==='ArrowDown')&&e.target&&e.target.type==='number')e.preventDefault()});
 root.addEventListener('click',e=>{if(lastPT==='touch'&&e.target.closest(TAP)&&!RM.matches)setTimeout(()=>onTap(e),110);else onTap(e)});
 /* после появления снимаем класс, чтобы анимация не перебивала отклик на нажатие */
 root.addEventListener('animationend',e=>{if(e.animationName==='enter')e.target.classList.remove('a')});
