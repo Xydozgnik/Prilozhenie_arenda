@@ -27,6 +27,7 @@
 - Эмулятор и запуск на телефоне — следующий шаг (нужно докачать system image или подключить телефон по USB с отладкой).
 - **Flutter-проект живёт в `D:\Projects\porog_flutter`** (пакет `ru.porog.porog`). НЕ переносить в папку с кириллицей: Android Gradle Plugin отказывается собирать проект по пути с не-ASCII символами (`android.overridePathCheck` — не решение, ломает aapt2). Поэтому проект не в `D:\KimiData\kimi\Workspaces\Порог-учет аренды`.
 - Эмулятор: AVD `porog_pixel` (Pixel 7, Android 16, google_apis_playstore x86_64). Запуск: `flutter emulators --launch porog_pixel`.
+- **Веб-версия (Flutter Web)** публикуется на GitHub Pages: https://xydozgnik.github.io/porog-app/ — отдельный репозиторий `Xydozgnik/porog-app`, источник Pages — ветка `main`, корень. Деплой: `flutter build web --base-href '/porog-app/'` (из Git Bash с `MSYS_NO_PATHCONV=1` или через PowerShell-скрипт `build-web.ps1` в корне репо), затем содержимое `build/web` копируется в `D:\Projects\porog-web-deploy` (там git-репозиторий с remote на porog-app, `.nojekyll` обязателен) и пушится. Иконки и `manifest.json` — из прототипа (`icon-192.png`, `icon-512.png`, `icon-maskable.png`, `apple-touch-icon.png`). ВАЖНО: sqflite на вебе не работает — данные в веб-версии пока не сохраняются между запусками, нужен отдельный репозиторий на IndexedDB.
 
 ## Принятые решения
 
