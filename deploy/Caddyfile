@@ -1,0 +1,15 @@
+# Статика: страница-приглашение арендатора и веб-экран (Flutter Web позже)
+porog-app.ru {
+	root * /srv/www
+	file_server
+	encode zstd gzip
+}
+
+www.porog-app.ru {
+	redir https://porog-app.ru{uri} permanent
+}
+
+# API PocketBase (админка: https://api.porog-app.ru/_/)
+api.porog-app.ru {
+	reverse_proxy pocketbase:8090
+}
