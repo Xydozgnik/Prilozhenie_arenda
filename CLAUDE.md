@@ -27,6 +27,7 @@
 - Эмулятор и запуск на телефоне — следующий шаг (нужно докачать system image или подключить телефон по USB с отладкой).
 - **Flutter-проект живёт в `D:\Projects\porog_flutter`** (пакет `ru.porog.porog`). НЕ переносить в папку с кириллицей: Android Gradle Plugin отказывается собирать проект по пути с не-ASCII символами (`android.overridePathCheck` — не решение, ломает aapt2). Поэтому проект не в `D:\KimiData\kimi\Workspaces\Порог-учет аренды`.
 - Эмулятор: AVD `porog_pixel` (Pixel 7, Android 16, google_apis_playstore x86_64). Запуск: `flutter emulators --launch porog_pixel`.
+- **Слой данных готов** (`lib/data/`): модели по прототипу (`models/`), деньги — целые копейки (`…Kop`), оплаты — список операций `PaymentOp` (paid/claimed/confirmed/rejected), валидация всего входящего (`validators.dart`, аналог cleanData), репозиторий `PorogRepository` + SQLite (`sqflite_repository.dart`: meta одним JSON + objects построчно) + `MemoryRepository` для тестов. Формат JSON v2 (поля `…Kop`); рублёвые суммы прототипа при чтении конвертируются в копейки. Тесты: `test/data/` (round-trip, валидаторы, репозиторий). Особенность Flutter 3.50: `material.dart` устарел, используем `package:material_ui/material_ui.dart`. Тесты и doctor из Git Bash падают с «%PROGRAMFILES(X86)% not found» — запускать через PowerShell с `${env:ProgramFiles(x86)}='C:\Program Files (x86)'`.
 
 ## Принятые решения
 
