@@ -25,6 +25,8 @@
 - `CHROME_EXECUTABLE` = `C:\Program Files\Google\Chrome\Application\chrome.exe`.
 - `flutter doctor` — зелёный по всему, что нужно для Android; Visual Studio не установлен (нужен только для сборки под Windows).
 - Эмулятор и запуск на телефоне — следующий шаг (нужно докачать system image или подключить телефон по USB с отладкой).
+- **Flutter-проект живёт в `D:\Projects\porog_flutter`** (пакет `ru.porog.porog`). НЕ переносить в папку с кириллицей: Android Gradle Plugin отказывается собирать проект по пути с не-ASCII символами (`android.overridePathCheck` — не решение, ломает aapt2). Поэтому проект не в `D:\KimiData\kimi\Workspaces\Порог-учет аренды`.
+- Эмулятор: AVD `porog_pixel` (Pixel 7, Android 16, google_apis_playstore x86_64). Запуск: `flutter emulators --launch porog_pixel`.
 
 ## Принятые решения
 
